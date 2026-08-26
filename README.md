@@ -402,6 +402,12 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
   arquivo (`fileParallelism: false` no `vitest.config.ts`) para evitar que
   a limpeza de um arquivo apague dados que outro arquivo está usando.
   Detalhado em [`backend/README.md`](backend/README.md).
+- **`/health` verifica dependências reais:** o endpoint testa `SELECT 1`
+  no Postgres e `PING` no Redis (`backend/src/services/healthService.ts`)
+  em vez de responder `{status:"ok"}` de forma estática — retorna `503` e
+  `status:"degraded"` se qualquer um dos dois estiver fora do ar. É esse
+  mesmo endpoint que o `healthcheck` do `backend-api` no `compose.yaml`
+  usa, então agora ele reflete o estado real das dependências.
 - **Teste e2e tolera falha simulada:** o teste Playwright aceita tanto
   "Concluído" quanto "Falhou" como status terminal válido, porque a API
   fake de análise tem falhas periódicas propositais (`FAIL_EVERY_N`) que
@@ -417,9 +423,15 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
 ## Limitações conhecidas / próximos passos
 
 - Não há garantia transacional entre gravar a review no Postgres e
-  publicar o job no Redis (se o processo cair entre os dois passos, a
-  review fica presa em `pending`). Próximo passo: outbox pattern ou um job
-  de reconciliação que varre reviews `pending` antigas e republica o job.
+  publicar o job no Redis — se o processo cair entre os dois passos, a
+  review ficaria presa em `pending`. Mitigado por um job de reconciliação
+  (`reconcileStuckReviews`/`startReconciliationLoop` em
+  `backend/src/services/reconciliationService.ts`) que roda a cada 60s no
+  processo do worker, varre reviews `pending` há mais de 2 minutos sem job
+  correspondente na fila e as reenfileira. Não é uma garantia
+  transacional de verdade (isso exigiria um outbox pattern), mas cobre o
+  caso real de crash entre os dois passos sem a complexidade de uma
+  tabela de outbox.
 - Sem SSE/WebSocket — a atualização de status na tela depende de polling.
 - Sem alertas para avaliações negativas.
 - Sem endpoint de reprocessamento manual para reviews `failed`.
