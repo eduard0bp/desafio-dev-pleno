@@ -30,6 +30,10 @@ import classes from './ReviewList.module.css';
 
 const GRID_TEMPLATE_COLUMNS = '2fr 1.3fr 1fr 1fr 1fr 1fr';
 const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data'];
+// Badge/StatusBadge are inline-level elements — wrapped in a plain block Box,
+// their surrounding line-height leaves phantom space that shifts them a few
+// pixels off-center relative to plain <Text> cells. Flex removes that gap.
+const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center' } as const;
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -40,7 +44,6 @@ const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
 ];
 
 const RATING_OPTIONS = [
-  { value: '', label: 'Todas as notas' },
   { value: '5', label: '5 estrelas' },
   { value: '4', label: '4+ estrelas' },
   { value: '3', label: '3+ estrelas' },
@@ -125,7 +128,7 @@ export function ReviewList() {
         <Select
           placeholder="Todas as notas"
           data={RATING_OPTIONS}
-          value={filters.minRating != null ? String(filters.minRating) : ''}
+          value={filters.minRating != null ? String(filters.minRating) : null}
           onChange={(value) => filters.setMinRating(value ? Number(value) : null)}
           w={{ base: '100%', xs: 180 }}
           clearable
@@ -214,13 +217,13 @@ export function ReviewList() {
                         {review.comment}
                       </Text>
                     </Box>
-                    <Box role="cell">
+                    <Box role="cell" style={CELL_FLEX_STYLE}>
                       <Rating value={review.rating} color="tertiary" size="sm" readOnly />
                     </Box>
-                    <Box role="cell">
+                    <Box role="cell" style={CELL_FLEX_STYLE}>
                       <StatusBadge status={review.status} />
                     </Box>
-                    <Box role="cell">
+                    <Box role="cell" style={CELL_FLEX_STYLE}>
                       {sentiment ? (
                         <Badge color={sentiment.color}>{sentiment.label}</Badge>
                       ) : (
@@ -229,7 +232,7 @@ export function ReviewList() {
                         </Text>
                       )}
                     </Box>
-                    <Box role="cell">
+                    <Box role="cell" style={CELL_FLEX_STYLE}>
                       {category ? (
                         <Text size="sm">{category}</Text>
                       ) : (

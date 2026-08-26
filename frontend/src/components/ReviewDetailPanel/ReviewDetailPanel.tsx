@@ -1,4 +1,4 @@
-import { Alert, Badge, Center, Group, Loader, Stack, Text } from '@mantine/core';
+import { Alert, Badge, Center, Group, Loader, Rating, ScrollArea, Stack, Text } from '@mantine/core';
 import { useReviewQuery } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
@@ -22,10 +22,10 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
         <Text fw={700}>{data.company_id}</Text>
         <StatusBadge status={data.status} />
       </Group>
-      <Text size="sm" c="dimmed">
-        {data.rating} ★
-      </Text>
-      <Text>{data.comment}</Text>
+      <Rating value={data.rating} color="tertiary" size="sm" readOnly />
+      <ScrollArea.Autosize mah={{ base: 150, sm: 220 }} type="auto" offsetScrollbars>
+        <Text style={{ whiteSpace: 'pre-wrap' }}>{data.comment}</Text>
+      </ScrollArea.Autosize>
       {data.analysis && (
         <Group gap="xs">
           <Badge color={SENTIMENT_LABELS[data.analysis.sentiment]?.color}>
