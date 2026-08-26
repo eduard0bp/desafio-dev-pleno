@@ -348,7 +348,7 @@ docker compose up --build
 
 Depois que os containers subirem, abra o frontend, cadastre uma avaliação e
 acompanhe o status mudar de `pending` → `processing` → `completed`/`failed`
-na lista (a tela consulta a API por polling a cada poucos segundos).
+na lista (a tela consulta a API por polling a cada 3 segundos).
 
 Para desenvolvimento local sem Docker (backend e frontend rodando fora de
 container, mas dependendo de Postgres/Redis/mock-api), veja
@@ -364,16 +364,18 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
 - **Fila:** BullMQ + Redis. O worker roda em um processo separado
   (`npm run dev:worker` / `start:worker`, e um serviço próprio no
   Docker Compose) e consome os jobs publicados pela API. Backoff
-  exponencial (base 1s, teto 30s, respeitando o `Retry-After` retornado
-  pela API fake em `429`/`503`) com até 5 tentativas antes de marcar a
-  review como `failed`.
-- **Atualização de status na UI:** polling (TanStack Query) a cada poucos
-  segundos enquanto houver avaliações `pending`/`processing`; SSE/WebSocket
-  ficou de fora por tempo — ver limitações abaixo.
-- **Versão do Prisma fixada:** `@prisma/client`/`prisma` foram fixados em
-  `6.19.3` em vez de "latest" — decisão deliberada para evitar as mudanças
-  de breaking change do Prisma 7+/8+ no meio do desafio. Detalhado também
-  em [`backend/README.md`](backend/README.md).
+  exponencial com teto de 30s, exceto quando o `Retry-After` do serviço
+  externo pede um valor maior — nesse caso, respeitamos o valor externo
+  (`computeBackoffDelayMs` em `backend/src/lib/retry.ts`), com até 5
+  tentativas antes de marcar a review como `failed`.
+- **Atualização de status na UI:** polling (TanStack Query) a cada 3
+  segundos enquanto houver avaliações `pending`/`processing`, tanto na
+  lista quanto no painel de detalhe; SSE/WebSocket ficou de fora por tempo
+  — ver limitações abaixo.
+- **Versão do Prisma mantida na major 6:** `@prisma/client`/`prisma` foram
+  fixados em `^6.19.3` em vez de "latest" — decisão deliberada para evitar
+  as mudanças de breaking change do Prisma 7+/8+ no meio do desafio.
+  Detalhado também em [`backend/README.md`](backend/README.md).
 - **Testes de integração sequenciais:** os testes de integração do backend
   compartilham um único Postgres real, então rodam sem paralelismo de
   arquivo (`fileParallelism: false` no `vitest.config.ts`) para evitar que
@@ -401,4 +403,15 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
 - Sem filtros ou busca na lista de avaliações.
 - Sem alertas para avaliações negativas.
 - Sem endpoint de reprocessamento manual para reviews `failed`.
+- `VITE_API_URL` é definida em build time da imagem Docker do frontend
+  (`http://localhost:3000`, veja `compose.yaml`), não em runtime. Isso
+  funciona bem para rodar tudo localmente, mas significa que a UI só fala
+  corretamente com a API quando acessada via `localhost` na mesma máquina
+  que fez o build da imagem — acessar o frontend a partir de outro host/IP
+  exigiria rebuildar a imagem com um `VITE_API_URL` diferente (ou passar a
+  injetar a URL em runtime, ex. via um `env.js` gerado na inicialização do
+  container).
+- Backend e worker não implementam desligamento gracioso (não há handler de
+  `SIGTERM`): em produção isso pode interromper uma requisição ou um job em
+  andamento no meio da execução durante um deploy/restart.
 
