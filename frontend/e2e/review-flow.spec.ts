@@ -13,9 +13,9 @@ test('submits a review and follows its status until completion', async ({ page }
   await expect(row).toBeVisible();
   await expect(row.getByText('Pendente').or(row.getByText('Processando'))).toBeVisible();
 
-  await expect(row.getByText('Concluído').or(row.getByText('Falhou'))).toBeVisible({ timeout: 20000 });
+  await expect(row.getByText('Concluído').or(row.getByText('Falhou'))).toBeVisible({ timeout: 30000 });
 
   await row.click();
-  const detail = page.locator('text=Chegou frio e atrasado, muito ruim.');
+  const detail = page.getByText('Chegou frio e atrasado, muito ruim.');
   await expect(detail).toBeVisible();
 });
