@@ -50,7 +50,7 @@ describe('Reviews API', () => {
     expect(response.status).toBe(400);
   });
 
-  it('GET /reviews lists the created reviews', async () => {
+  it('GET /reviews lists the created reviews with pagination and counts', async () => {
     const externalId = `test-${randomUUID()}`;
     await request(app).post('/reviews').send({
       external_id: externalId, company_id: 'c1', rating: 5, comment: 'top',
@@ -60,6 +60,60 @@ describe('Reviews API', () => {
     expect(response.status).toBe(200);
     const item = response.body.data.find((r: { external_id: string }) => r.external_id === externalId);
     expect(item).toMatchObject({ external_id: externalId, company_id: 'c1', rating: 5, status: 'pending', analysis: null });
+    expect(response.body.pagination).toMatchObject({ page: 1, pageSize: 10 });
+    expect(typeof response.body.pagination.total).toBe('number');
+    expect(typeof response.body.pagination.totalPages).toBe('number');
+    expect(response.body.counts).toHaveProperty('all');
+    expect(response.body.counts).toHaveProperty('pending');
+  });
+
+  it('GET /reviews filters by status via query param', async () => {
+    const marker = randomUUID();
+    const idFailed = `test-${marker}-failed`;
+    const created = await request(app).post('/reviews').send({
+      external_id: idFailed, company_id: `FilterCo-${marker}`, rating: 3, comment: 'vai falhar',
+    });
+    await prisma.review.update({ where: { id: created.body.id }, data: { status: 'failed' } });
+
+    const response = await request(app).get('/reviews').query({ status: 'failed', search: `filterco-${marker}` });
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].external_id).toBe(idFailed);
+  });
+
+  it('GET /reviews filters by minRating and search via query params', async () => {
+    const marker = randomUUID();
+    await request(app).post('/reviews').send({
+      external_id: `test-${marker}-low`, company_id: `RatingCo-${marker}`, rating: 2, comment: 'nota baixa',
+    });
+    await request(app).post('/reviews').send({
+      external_id: `test-${marker}-high`, company_id: `RatingCo-${marker}`, rating: 5, comment: 'nota alta',
+    });
+
+    const response = await request(app).get('/reviews').query({ search: `ratingco-${marker}`, minRating: '4' });
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].external_id).toBe(`test-${marker}-high`);
+  });
+
+  it('GET /reviews paginates via page/pageSize query params', async () => {
+    const marker = randomUUID();
+    for (let i = 0; i < 3; i += 1) {
+      await request(app).post('/reviews').send({
+        external_id: `test-${marker}-${i}`, company_id: `PageCo-${marker}`, rating: 3, comment: `review ${i}`,
+      });
+    }
+
+    const response = await request(app).get('/reviews').query({ search: `pageco-${marker}`, page: '2', pageSize: '2' });
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.pagination).toEqual({ page: 2, pageSize: 2, total: 3, totalPages: 2 });
+  });
+
+  it('GET /reviews with an invalid query param returns 400', async () => {
+    const response = await request(app).get('/reviews').query({ status: 'not-a-real-status' });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('GET /reviews/:id returns 404 for a nonexistent id', async () => {

@@ -44,14 +44,97 @@ describe('reviewService', () => {
     await prisma.review.update({ where: { id: reviewA.id }, data: { createdAt: earlier } });
     await prisma.review.update({ where: { id: reviewB.id }, data: { createdAt: later } });
 
-    const reviews = await listReviews();
-    const indexA = reviews.findIndex((r) => r.externalId === idA);
-    const indexB = reviews.findIndex((r) => r.externalId === idB);
+    const { data } = await listReviews({ page: 1, pageSize: 100 });
+    const indexA = data.findIndex((r) => r.externalId === idA);
+    const indexB = data.findIndex((r) => r.externalId === idB);
 
     expect(indexA).toBeGreaterThanOrEqual(0);
     expect(indexB).toBeGreaterThanOrEqual(0);
     // idB has the later createdAt, so in descending order it must appear first (lower index).
     expect(indexB).toBeLessThan(indexA);
+  });
+
+  it('filters by status', async () => {
+    const idA = `test-${randomUUID()}`;
+    const idB = `test-${randomUUID()}`;
+    await createReview({ externalId: idA, companyId: 'c', rating: 3, comment: 'a' });
+    const { review: reviewB } = await createReview({ externalId: idB, companyId: 'c', rating: 3, comment: 'b' });
+    await prisma.review.update({ where: { id: reviewB.id }, data: { status: 'failed' } });
+
+    const { data } = await listReviews({ page: 1, pageSize: 100, status: 'failed' });
+    expect(data.every((r) => r.status === 'failed')).toBe(true);
+    expect(data.some((r) => r.externalId === idB)).toBe(true);
+    expect(data.some((r) => r.externalId === idA)).toBe(false);
+  });
+
+  it('filters by minimum rating', async () => {
+    const idLow = `test-${randomUUID()}`;
+    const idHigh = `test-${randomUUID()}`;
+    await createReview({ externalId: idLow, companyId: 'c', rating: 2, comment: 'a' });
+    await createReview({ externalId: idHigh, companyId: 'c', rating: 5, comment: 'b' });
+
+    const { data } = await listReviews({ page: 1, pageSize: 100, minRating: 4 });
+    expect(data.some((r) => r.externalId === idHigh)).toBe(true);
+    expect(data.some((r) => r.externalId === idLow)).toBe(false);
+  });
+
+  it('filters by company search, case-insensitive', async () => {
+    const marker = randomUUID();
+    const idMatch = `test-${randomUUID()}`;
+    const idOther = `test-${randomUUID()}`;
+    await createReview({ externalId: idMatch, companyId: `AcmeCorp-${marker}`, rating: 3, comment: 'a' });
+    await createReview({ externalId: idOther, companyId: `Globex-${marker}`, rating: 3, comment: 'b' });
+
+    const { data } = await listReviews({ page: 1, pageSize: 100, search: `acmecorp-${marker}` });
+    expect(data).toHaveLength(1);
+    expect(data[0]?.externalId).toBe(idMatch);
+  });
+
+  it('filters by date range, inclusive of the end date', async () => {
+    const idInRange = `test-${randomUUID()}`;
+    const idOutOfRange = `test-${randomUUID()}`;
+    const { review: inRange } = await createReview({ externalId: idInRange, companyId: 'c', rating: 3, comment: 'a' });
+    const { review: outOfRange } = await createReview({ externalId: idOutOfRange, companyId: 'c', rating: 3, comment: 'b' });
+
+    await prisma.review.update({ where: { id: inRange.id }, data: { createdAt: new Date('2026-02-15T12:00:00.000Z') } });
+    await prisma.review.update({ where: { id: outOfRange.id }, data: { createdAt: new Date('2026-03-01T00:00:00.000Z') } });
+
+    const { data } = await listReviews({
+      page: 1,
+      pageSize: 100,
+      dateFrom: new Date('2026-02-01T00:00:00.000Z'),
+      dateTo: new Date('2026-02-15T00:00:00.000Z'),
+    });
+
+    expect(data.some((r) => r.externalId === idInRange)).toBe(true);
+    expect(data.some((r) => r.externalId === idOutOfRange)).toBe(false);
+  });
+
+  it('paginates correctly and reports total/totalPages', async () => {
+    const marker = randomUUID();
+    for (let i = 0; i < 5; i += 1) {
+      await createReview({ externalId: `test-${marker}-${i}`, companyId: `PageCo-${marker}`, rating: 3, comment: `review ${i}` });
+    }
+
+    const firstPage = await listReviews({ page: 1, pageSize: 2, search: `pageco-${marker}` });
+    expect(firstPage.data).toHaveLength(2);
+    expect(firstPage.pagination).toEqual({ page: 1, pageSize: 2, total: 5, totalPages: 3 });
+
+    const lastPage = await listReviews({ page: 3, pageSize: 2, search: `pageco-${marker}` });
+    expect(lastPage.data).toHaveLength(1);
+  });
+
+  it('counts reflect other filters but ignore the status filter itself', async () => {
+    const marker = randomUUID();
+    const idPending = `test-${marker}-pending`;
+    const idFailed = `test-${marker}-failed`;
+    await createReview({ externalId: idPending, companyId: `CountCo-${marker}`, rating: 3, comment: 'a' });
+    const { review: failedReview } = await createReview({ externalId: idFailed, companyId: `CountCo-${marker}`, rating: 3, comment: 'b' });
+    await prisma.review.update({ where: { id: failedReview.id }, data: { status: 'failed' } });
+
+    const { counts } = await listReviews({ page: 1, pageSize: 100, search: `countco-${marker}`, status: 'failed' });
+
+    expect(counts).toEqual({ all: 2, pending: 1, processing: 0, completed: 0, failed: 1 });
   });
 
   it('getReviewById returns null for a nonexistent id', async () => {

@@ -8,3 +8,15 @@ export const createReviewSchema = z.object({
 });
 
 export type CreateReviewPayload = z.infer<typeof createReviewSchema>;
+
+export const listReviewsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  status: z.enum(['pending', 'processing', 'completed', 'failed']).optional(),
+  minRating: z.coerce.number().int().min(1).max(5).optional(),
+  search: z.string().trim().min(1).optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+});
+
+export type ListReviewsQuery = z.infer<typeof listReviewsQuerySchema>;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { createReviewSchema } from '../validation';
+import { createReviewSchema, listReviewsQuerySchema } from '../validation';
 import { createReview, listReviews, getReviewById } from '../services/reviewService';
 import { enqueueReviewJob } from '../queue/reviewQueue';
 import type { Review } from '@prisma/client';
@@ -53,10 +53,21 @@ reviewsRouter.post('/reviews', async (req, res, next) => {
   }
 });
 
-reviewsRouter.get('/reviews', async (_req, res, next) => {
+reviewsRouter.get('/reviews', async (req, res, next) => {
   try {
-    const reviews = await listReviews();
-    res.json({ data: reviews.map(toListItem) });
+    const parsed = listReviewsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(errorResponse(req, 'VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Parâmetros inválidos', false, parsed.error.flatten()));
+    }
+
+    const result = await listReviews(parsed.data);
+    res.json({
+      data: result.data.map(toListItem),
+      pagination: result.pagination,
+      counts: result.counts,
+    });
   } catch (err) {
     next(err);
   }
