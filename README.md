@@ -328,3 +328,77 @@ podemos abrir a tela e percorrer o fluxo completo.
 - facilidade para executar o projeto;
 - capacidade de explicar decisões e trade-offs.
 
+---
+
+# Falaê! — implementação entregue
+
+O que segue documenta a implementação real: como rodar, decisões técnicas e
+limitações conhecidas.
+
+## Como rodar
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+- Frontend: http://localhost:5173
+- API: http://localhost:3000
+- API fake de análise: http://localhost:4000
+
+Depois que os containers subirem, abra o frontend, cadastre uma avaliação e
+acompanhe o status mudar de `pending` → `processing` → `completed`/`failed`
+na lista (a tela consulta a API por polling a cada poucos segundos).
+
+Para desenvolvimento local sem Docker (backend e frontend rodando fora de
+container, mas dependendo de Postgres/Redis/mock-api), veja
+[`backend/README.md`](backend/README.md) e [`frontend/README.md`](frontend/README.md).
+
+## Decisões técnicas
+
+- **Idempotência:** `external_id` é a chave única de deduplicação no banco
+  (constraint `UNIQUE` no Postgres via Prisma). Se o header `Idempotency-Key`
+  for enviado, ele precisa ser igual ao `external_id` do corpo — do
+  contrário a API responde `422`. Um `POST` repetido com o mesmo
+  `external_id` retorna a review já existente em vez de criar uma nova.
+- **Fila:** BullMQ + Redis. O worker roda em um processo separado
+  (`npm run dev:worker` / `start:worker`, e um serviço próprio no
+  Docker Compose) e consome os jobs publicados pela API. Backoff
+  exponencial (base 1s, teto 30s, respeitando o `Retry-After` retornado
+  pela API fake em `429`/`503`) com até 5 tentativas antes de marcar a
+  review como `failed`.
+- **Atualização de status na UI:** polling (TanStack Query) a cada poucos
+  segundos enquanto houver avaliações `pending`/`processing`; SSE/WebSocket
+  ficou de fora por tempo — ver limitações abaixo.
+- **Versão do Prisma fixada:** `@prisma/client`/`prisma` foram fixados em
+  `6.19.3` em vez de "latest" — decisão deliberada para evitar as mudanças
+  de breaking change do Prisma 7+/8+ no meio do desafio. Detalhado também
+  em [`backend/README.md`](backend/README.md).
+- **Testes de integração sequenciais:** os testes de integração do backend
+  compartilham um único Postgres real, então rodam sem paralelismo de
+  arquivo (`fileParallelism: false` no `vitest.config.ts`) para evitar que
+  a limpeza de um arquivo apague dados que outro arquivo está usando.
+  Detalhado em [`backend/README.md`](backend/README.md).
+- **Teste e2e tolera falha simulada:** o teste Playwright aceita tanto
+  "Concluído" quanto "Falhou" como status terminal válido, porque a API
+  fake de análise tem falhas periódicas propositais (`FAIL_EVERY_N`) que
+  persistem mesmo com a política de retry — não é um bug do teste, é o
+  comportamento esperado de uma dependência que às vezes falha de verdade.
+- **Uso de IA:** o Claude Code (Anthropic) foi usado do início ao fim deste
+  desafio — para discutir a arquitetura, escrever a spec técnica, planejar
+  as tasks, gerar a base de código (rotas, worker, fila, testes unitários,
+  de integração e e2e, frontend) e escrever esta documentação. Todo o
+  código gerado foi lido, revisado e ajustado manualmente antes de cada
+  commit; nenhuma parte foi aceita sem revisão.
+
+## Limitações conhecidas / próximos passos
+
+- Não há garantia transacional entre gravar a review no Postgres e
+  publicar o job no Redis (se o processo cair entre os dois passos, a
+  review fica presa em `pending`). Próximo passo: outbox pattern ou um job
+  de reconciliação que varre reviews `pending` antigas e republica o job.
+- Sem SSE/WebSocket — a atualização de status na tela depende de polling.
+- Sem filtros ou busca na lista de avaliações.
+- Sem alertas para avaliações negativas.
+- Sem endpoint de reprocessamento manual para reviews `failed`.
+
