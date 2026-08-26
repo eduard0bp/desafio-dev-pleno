@@ -1,0 +1,47 @@
+import { describe, it, expect, afterEach } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { prisma } from '../../src/lib/prisma';
+import { createReview, listReviews, getReviewById } from '../../src/services/reviewService';
+
+describe('reviewService', () => {
+  afterEach(async () => {
+    await prisma.review.deleteMany({ where: { externalId: { startsWith: 'test-' } } });
+  });
+
+  it('creates a new review and marks created: true', async () => {
+    const externalId = `test-${randomUUID()}`;
+    const { review, created } = await createReview({
+      externalId, companyId: 'c1', rating: 5, comment: 'Excelente',
+    });
+    expect(created).toBe(true);
+    expect(review.status).toBe('pending');
+  });
+
+  it('resubmitting the same external_id returns the existing record without creating another', async () => {
+    const externalId = `test-${randomUUID()}`;
+    const first = await createReview({ externalId, companyId: 'c1', rating: 5, comment: 'A' });
+    const second = await createReview({ externalId, companyId: 'c1', rating: 5, comment: 'A' });
+
+    expect(second.created).toBe(false);
+    expect(second.review.id).toBe(first.review.id);
+
+    const all = await prisma.review.findMany({ where: { externalId } });
+    expect(all).toHaveLength(1);
+  });
+
+  it('lists reviews ordered by created_at desc', async () => {
+    const idA = `test-${randomUUID()}`;
+    const idB = `test-${randomUUID()}`;
+    await createReview({ externalId: idA, companyId: 'c', rating: 1, comment: 'a' });
+    await createReview({ externalId: idB, companyId: 'c', rating: 1, comment: 'b' });
+
+    const reviews = await listReviews();
+    const index = reviews.findIndex((r) => r.externalId === idB);
+    expect(index).toBeGreaterThanOrEqual(0);
+  });
+
+  it('getReviewById returns null for a nonexistent id', async () => {
+    const result = await getReviewById(randomUUID());
+    expect(result).toBeNull();
+  });
+});
