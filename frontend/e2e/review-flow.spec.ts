@@ -23,6 +23,6 @@ test('submits a review and follows its status until completion', async ({ page }
   await expect(row.getByText('Concluído').or(row.getByText('Falhou'))).toBeVisible({ timeout: 30000 });
 
   await row.click();
-  const detail = page.getByText('Chegou frio e atrasado, muito ruim.');
+  const detail = page.getByRole('dialog').getByText('Chegou frio e atrasado, muito ruim.');
   await expect(detail).toBeVisible();
 });

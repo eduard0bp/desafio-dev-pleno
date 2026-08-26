@@ -206,9 +206,14 @@ export function ReviewList() {
                       alignItems: 'center',
                     }}
                   >
-                    <Text role="cell" size="sm" fw={500}>
-                      {review.company_id}
-                    </Text>
+                    <Box role="cell" miw={0}>
+                      <Text size="sm" fw={500} truncate="end">
+                        {review.company_id}
+                      </Text>
+                      <Text size="xs" c="dimmed" truncate="end">
+                        {review.comment}
+                      </Text>
+                    </Box>
                     <Box role="cell">
                       <Rating value={review.rating} color="tertiary" size="sm" readOnly />
                     </Box>
@@ -249,7 +254,7 @@ export function ReviewList() {
           <Text size="sm" c="dimmed">
             Mostrando {rangeStart}-{rangeEnd} de {pagination.total} avaliações
           </Text>
-          <Pagination total={pagination.totalPages} value={pagination.page} onChange={filters.setPage} />
+          <Pagination total={pagination.totalPages} value={pagination.page} onChange={filters.setPage} radius="md" />
         </Flex>
       )}
 

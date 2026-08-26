@@ -91,6 +91,7 @@ function toListItem(review: Review): CoreReviewListItem {
     external_id: review.externalId,
     company_id: review.companyId,
     rating: review.rating,
+    comment: review.comment,
     status: review.status as CoreReviewListItem['status'],
     analysis: review.analysis as CoreReviewListItem['analysis'],
     created_at: review.createdAt,

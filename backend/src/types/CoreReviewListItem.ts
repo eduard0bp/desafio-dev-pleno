@@ -6,6 +6,7 @@ export interface CoreReviewListItem {
   external_id: string;
   company_id: string;
   rating: number;
+  comment: string;
   status: CoreReviewStatus;
   analysis: CoreReviewAnalysis | null;
   created_at: Date;
