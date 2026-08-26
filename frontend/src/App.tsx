@@ -1,21 +1,37 @@
-import { AppShell, Container, Stack } from '@mantine/core';
-import { Sidebar } from './components/Sidebar';
-import { ReviewForm } from './components/ReviewForm';
-import { ReviewList } from './components/ReviewList';
+import { AppShell, Burger, Group, Title } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { Navigate, Route, Routes } from 'react-router';
+import { Sidebar } from './components';
+import { AvaliacoesPage, NovaAvaliacaoPage } from './pages';
 
 export default function App() {
+  const [opened, { toggle, close }] = useDisclosure();
+
   return (
-    <AppShell navbar={{ width: 240, breakpoint: 'sm' }} padding="lg">
+    <AppShell
+      header={{ height: 56 }}
+      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      padding="lg"
+    >
+      <AppShell.Header hiddenFrom="sm">
+        <Group h="100%" px="md" gap="sm">
+          <Burger opened={opened} onClick={toggle} size="sm" aria-label="Abrir menu" />
+          <Title order={4} c="primary.7">
+            Falaê!
+          </Title>
+        </Group>
+      </AppShell.Header>
+
       <AppShell.Navbar>
-        <Sidebar />
+        <Sidebar onNavigate={close} />
       </AppShell.Navbar>
+
       <AppShell.Main>
-        <Container size="lg">
-          <Stack gap="xl">
-            <ReviewForm />
-            <ReviewList />
-          </Stack>
-        </Container>
+        <Routes>
+          <Route path="/" element={<AvaliacoesPage />} />
+          <Route path="/nova-avaliacao" element={<NovaAvaliacaoPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </AppShell.Main>
     </AppShell>
   );

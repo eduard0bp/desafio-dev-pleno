@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Alert, Badge, Chip, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useReviewsQuery } from '../../hooks';
-import { StatusBadge } from '../StatusBadge';
-import { ReviewDetailPanel } from '../ReviewDetailPanel';
+import { StatusBadge } from '../StatusBadge/StatusBadge';
+import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
 
 const SENTIMENT_LABELS: Record<string, { label: string; color: string }> = {
@@ -62,7 +62,7 @@ export function ReviewList() {
       </Stack>
 
       <Chip.Group value={filters.status} onChange={(value) => filters.setStatus(value as StatusFilterValue)}>
-        <Group gap="xs">
+        <Group gap="xs" wrap="wrap">
           {STATUS_CHIPS.map((chip) => (
             <Chip key={chip.value} value={chip.value} variant="filled" color="primary">
               {chip.label} ({filters.counts[chip.value]})
@@ -76,14 +76,14 @@ export function ReviewList() {
           placeholder="Buscar por empresa..."
           value={filters.search}
           onChange={(event) => filters.setSearch(event.currentTarget.value)}
-          w={240}
+          w={{ base: '100%', xs: 240 }}
         />
         <Select
           placeholder="Todas as notas"
           data={RATING_OPTIONS}
           value={filters.minRating != null ? String(filters.minRating) : ''}
           onChange={(value) => filters.setMinRating(value ? Number(value) : null)}
-          w={180}
+          w={{ base: '100%', xs: 180 }}
           clearable
         />
         <DatePickerInput
@@ -91,7 +91,7 @@ export function ReviewList() {
           placeholder="Período"
           value={filters.dateRange}
           onChange={(value) => filters.setDateRange(value as [Date | null, Date | null])}
-          w={260}
+          w={{ base: '100%', xs: 260 }}
           clearable
         />
       </Group>
@@ -100,40 +100,42 @@ export function ReviewList() {
         <Text c="dimmed">Nenhuma avaliação encontrada para os filtros selecionados.</Text>
       ) : (
         <>
-          <Table highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Empresa</Table.Th>
-                <Table.Th>Nota</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Sentimento</Table.Th>
-                <Table.Th>Categoria</Table.Th>
-                <Table.Th>Data</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {filters.reviews.map((review) => {
-                const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
-                const category = review.analysis ? CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category : undefined;
-                return (
-                  <Table.Tr key={review.id} onClick={() => setSelectedId(review.id)} style={{ cursor: 'pointer' }}>
-                    <Table.Td>{review.company_id}</Table.Td>
-                    <Table.Td>{review.rating} ★</Table.Td>
-                    <Table.Td>
-                      <StatusBadge status={review.status} />
-                    </Table.Td>
-                    <Table.Td>
-                      {sentiment ? <Badge color={sentiment.color}>{sentiment.label}</Badge> : <Text c="dimmed" size="sm">—</Text>}
-                    </Table.Td>
-                    <Table.Td>{category ?? <Text c="dimmed" size="sm">—</Text>}</Table.Td>
-                    <Table.Td>{new Date(review.created_at).toLocaleDateString('pt-BR')}</Table.Td>
-                  </Table.Tr>
-                );
-              })}
-            </Table.Tbody>
-          </Table>
+          <Table.ScrollContainer minWidth={640}>
+            <Table highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Empresa</Table.Th>
+                  <Table.Th>Nota</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Sentimento</Table.Th>
+                  <Table.Th>Categoria</Table.Th>
+                  <Table.Th>Data</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {filters.reviews.map((review) => {
+                  const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
+                  const category = review.analysis ? CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category : undefined;
+                  return (
+                    <Table.Tr key={review.id} onClick={() => setSelectedId(review.id)} style={{ cursor: 'pointer' }}>
+                      <Table.Td>{review.company_id}</Table.Td>
+                      <Table.Td>{review.rating} ★</Table.Td>
+                      <Table.Td>
+                        <StatusBadge status={review.status} />
+                      </Table.Td>
+                      <Table.Td>
+                        {sentiment ? <Badge color={sentiment.color}>{sentiment.label}</Badge> : <Text c="dimmed" size="sm">—</Text>}
+                      </Table.Td>
+                      <Table.Td>{category ?? <Text c="dimmed" size="sm">—</Text>}</Table.Td>
+                      <Table.Td>{new Date(review.created_at).toLocaleDateString('pt-BR')}</Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
 
-          <Group justify="space-between">
+          <Group justify="space-between" wrap="wrap" gap="sm">
             <Text size="sm" c="dimmed">
               Mostrando {rangeStart}-{rangeEnd} de {filters.filteredCount} avaliações
             </Text>
