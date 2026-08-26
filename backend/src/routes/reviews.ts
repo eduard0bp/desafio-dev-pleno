@@ -5,6 +5,7 @@ import { createReview, listReviews, getReviewById } from '../services/reviewServ
 import { enqueueReviewJob } from '../queue/reviewQueue';
 import type { Review } from '@prisma/client';
 import type { Request } from 'express';
+import type { CoreReviewListItem, CoreReviewDetail } from '../types';
 
 export const reviewsRouter = Router();
 
@@ -73,28 +74,24 @@ reviewsRouter.get('/reviews/:id', async (req, res, next) => {
   }
 });
 
-function toListItem(review: Review) {
-  return {
-    id: review.id,
-    external_id: review.externalId,
-    rating: review.rating,
-    status: review.status,
-    created_at: review.createdAt,
-  };
-}
-
-function toDetail(review: Review) {
+function toListItem(review: Review): CoreReviewListItem {
   return {
     id: review.id,
     external_id: review.externalId,
     company_id: review.companyId,
     rating: review.rating,
-    comment: review.comment,
-    status: review.status,
-    analysis: review.analysis,
-    attempts: review.attempts,
+    status: review.status as CoreReviewListItem['status'],
+    analysis: review.analysis as CoreReviewListItem['analysis'],
     created_at: review.createdAt,
+  };
+}
+
+function toDetail(review: Review): CoreReviewDetail {
+  return {
+    ...toListItem(review),
+    comment: review.comment,
+    attempts: review.attempts,
     processed_at: review.processedAt,
-    last_error: review.lastError,
+    last_error: review.lastError as CoreReviewDetail['last_error'],
   };
 }

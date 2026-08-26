@@ -58,7 +58,8 @@ describe('Reviews API', () => {
 
     const response = await request(app).get('/reviews');
     expect(response.status).toBe(200);
-    expect(response.body.data.some((r: { external_id: string }) => r.external_id === externalId)).toBe(true);
+    const item = response.body.data.find((r: { external_id: string }) => r.external_id === externalId);
+    expect(item).toMatchObject({ external_id: externalId, company_id: 'c1', rating: 5, status: 'pending', analysis: null });
   });
 
   it('GET /reviews/:id returns 404 for a nonexistent id', async () => {
