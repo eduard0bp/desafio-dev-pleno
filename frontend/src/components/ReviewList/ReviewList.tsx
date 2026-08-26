@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import {
   Badge,
+  Box,
   Center,
   Chip,
   Flex,
   Group,
   Loader,
   Modal,
+  Paper,
   Pagination,
   Rating,
   Select,
   Stack,
-  Table,
   Text,
   TextInput,
   Title,
@@ -25,6 +26,10 @@ import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
 import { TableStateMessage } from '../TableStateMessage/TableStateMessage';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
 import type { CoreReviewStatusCounts } from '../../types';
+import classes from './ReviewList.module.css';
+
+const GRID_TEMPLATE_COLUMNS = '2fr 1.3fr 1fr 1fr 1fr 1fr';
+const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data'];
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -141,44 +146,44 @@ export function ReviewList() {
         />
       </Group>
 
-      <Table.ScrollContainer minWidth={640}>
-        <Table highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Empresa</Table.Th>
-              <Table.Th>Nota</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Sentimento</Table.Th>
-              <Table.Th>Categoria</Table.Th>
-              <Table.Th>Data</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
+      <Box style={{ overflowX: 'auto' }}>
+        <Box role="table" miw={640} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)' }}>
+          <Box role="rowgroup">
+            <Box
+              role="row"
+              px="md"
+              style={{ display: 'grid', gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gap: 'var(--mantine-spacing-sm)' }}
+            >
+              {COLUMN_LABELS.map((label) => (
+                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed">
+                  {label}
+                </Text>
+              ))}
+            </Box>
+          </Box>
+
+          <Box role="rowgroup" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)' }}>
             {isError ? (
-              <Table.Tr>
-                <Table.Td colSpan={6}>
-                  <TableStateMessage
-                    icon={<IconAlertTriangle size={24} />}
-                    color="red"
-                    title={(error as Error).message}
-                    description="Tente novamente em instantes."
-                  />
-                </Table.Td>
-              </Table.Tr>
+              <Paper withBorder radius="md" p="md">
+                <TableStateMessage
+                  icon={<IconAlertTriangle size={24} />}
+                  color="red"
+                  title={(error as Error).message}
+                  description="Tente novamente em instantes."
+                />
+              </Paper>
             ) : reviews.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={6}>
-                  <TableStateMessage
-                    icon={hasActiveFilters ? <IconFilterOff size={24} /> : <IconInbox size={24} />}
-                    title={emptyStateMessage}
-                    description={
-                      hasActiveFilters
-                        ? 'Tente ajustar ou limpar os filtros aplicados.'
-                        : 'Assim que uma avaliação for cadastrada, ela aparece aqui.'
-                    }
-                  />
-                </Table.Td>
-              </Table.Tr>
+              <Paper withBorder radius="md" p="md">
+                <TableStateMessage
+                  icon={hasActiveFilters ? <IconFilterOff size={24} /> : <IconInbox size={24} />}
+                  title={emptyStateMessage}
+                  description={
+                    hasActiveFilters
+                      ? 'Tente ajustar ou limpar os filtros aplicados.'
+                      : 'Assim que uma avaliação for cadastrada, ela aparece aqui.'
+                  }
+                />
+              </Paper>
             ) : (
               reviews.map((review) => {
                 const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
@@ -186,15 +191,31 @@ export function ReviewList() {
                   ? (CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category)
                   : undefined;
                 return (
-                  <Table.Tr key={review.id} onClick={() => setSelectedId(review.id)} style={{ cursor: 'pointer' }}>
-                    <Table.Td>{review.company_id}</Table.Td>
-                    <Table.Td>
+                  <Paper
+                    key={review.id}
+                    role="row"
+                    withBorder
+                    radius="md"
+                    p="sm"
+                    className={classes.row}
+                    onClick={() => setSelectedId(review.id)}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
+                      gap: 'var(--mantine-spacing-sm)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text role="cell" size="sm" fw={500}>
+                      {review.company_id}
+                    </Text>
+                    <Box role="cell">
                       <Rating value={review.rating} color="tertiary" size="sm" readOnly />
-                    </Table.Td>
-                    <Table.Td>
+                    </Box>
+                    <Box role="cell">
                       <StatusBadge status={review.status} />
-                    </Table.Td>
-                    <Table.Td>
+                    </Box>
+                    <Box role="cell">
                       {sentiment ? (
                         <Badge color={sentiment.color}>{sentiment.label}</Badge>
                       ) : (
@@ -202,22 +223,26 @@ export function ReviewList() {
                           —
                         </Text>
                       )}
-                    </Table.Td>
-                    <Table.Td>
-                      {category ?? (
+                    </Box>
+                    <Box role="cell">
+                      {category ? (
+                        <Text size="sm">{category}</Text>
+                      ) : (
                         <Text c="dimmed" size="sm">
                           —
                         </Text>
                       )}
-                    </Table.Td>
-                    <Table.Td>{new Date(review.created_at).toLocaleDateString('pt-BR')}</Table.Td>
-                  </Table.Tr>
+                    </Box>
+                    <Text role="cell" size="sm" c="dimmed">
+                      {new Date(review.created_at).toLocaleDateString('pt-BR')}
+                    </Text>
+                  </Paper>
                 );
               })
             )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+          </Box>
+        </Box>
+      </Box>
 
       {!isError && pagination && pagination.total > 0 && (
         <Flex direction={{ base: 'column', xs: 'row' }} justify={{ base: 'center', xs: 'space-between' }} align="center" gap="sm">

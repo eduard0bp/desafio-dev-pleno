@@ -1,0 +1,9 @@
+.row {
+  cursor: pointer;
+  transition: box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.row:hover {
+  border-color: var(--mantine-color-primary-4);
+  box-shadow: var(--mantine-shadow-sm);
+}
