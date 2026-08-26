@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   Badge,
   Center,
   Chip,
@@ -18,10 +17,12 @@ import {
   Title,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
+import { IconAlertTriangle, IconFilterOff, IconInbox } from '@tabler/icons-react';
 import { useReviewsQuery } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
 import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
+import { TableStateMessage } from '../TableStateMessage/TableStateMessage';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
 import type { CoreReviewStatusCounts } from '../../types';
 
@@ -155,18 +156,27 @@ export function ReviewList() {
           <Table.Tbody>
             {isError ? (
               <Table.Tr>
-                <Table.Td colSpan={6} p={0}>
-                  <Alert color="red" radius={0}>
-                    {(error as Error).message}
-                  </Alert>
+                <Table.Td colSpan={6}>
+                  <TableStateMessage
+                    icon={<IconAlertTriangle size={24} />}
+                    color="red"
+                    title={(error as Error).message}
+                    description="Tente novamente em instantes."
+                  />
                 </Table.Td>
               </Table.Tr>
             ) : reviews.length === 0 ? (
               <Table.Tr>
                 <Table.Td colSpan={6}>
-                  <Text c="dimmed" ta="center" py="md">
-                    {emptyStateMessage}
-                  </Text>
+                  <TableStateMessage
+                    icon={hasActiveFilters ? <IconFilterOff size={24} /> : <IconInbox size={24} />}
+                    title={emptyStateMessage}
+                    description={
+                      hasActiveFilters
+                        ? 'Tente ajustar ou limpar os filtros aplicados.'
+                        : 'Assim que uma avaliação for cadastrada, ela aparece aqui.'
+                    }
+                  />
                 </Table.Td>
               </Table.Tr>
             ) : (
