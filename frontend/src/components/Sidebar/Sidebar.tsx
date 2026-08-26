@@ -21,34 +21,29 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
 
   return (
-    <Stack h="100%" justify="space-between" p="md">
-      <Stack gap="lg">
-        <Title order={3} c="primary.7">
-          Falaê!
-        </Title>
-        {NAV_SECTIONS.map((section) => (
-          <Stack key={section.heading} gap={4}>
-            <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-              {section.heading}
-            </Text>
-            {section.items.map((item) => (
-              <NavLink
-                key={item.to}
-                component={Link}
-                to={item.to}
-                label={item.label}
-                active={location.pathname === item.to}
-                variant="filled"
-                color="primary"
-                onClick={onNavigate}
-              />
-            ))}
-          </Stack>
-        ))}
-      </Stack>
-      <Text size="xs" c="dimmed">
-        Monitoramento de feedbacks
-      </Text>
+    <Stack h="100%" p="md" gap="lg">
+      <Title order={3} c="primary.7">
+        Falaê!
+      </Title>
+      {NAV_SECTIONS.map((section) => (
+        <Stack key={section.heading} gap={4}>
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+            {section.heading}
+          </Text>
+          {section.items.map((item) => (
+            <NavLink
+              key={item.to}
+              component={Link}
+              to={item.to}
+              label={item.label}
+              active={location.pathname === item.to}
+              variant="filled"
+              color="primary"
+              onClick={onNavigate}
+            />
+          ))}
+        </Stack>
+      ))}
     </Stack>
   );
 }
