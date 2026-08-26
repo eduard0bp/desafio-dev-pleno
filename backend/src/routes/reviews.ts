@@ -4,11 +4,14 @@ import { createReviewSchema } from '../validation';
 import { createReview, listReviews, getReviewById } from '../services/reviewService';
 import { enqueueReviewJob } from '../queue/reviewQueue';
 import type { Review } from '@prisma/client';
+import type { Request } from 'express';
 
 export const reviewsRouter = Router();
 
-function errorResponse(code: string, message: string, retryable = false, details?: unknown) {
-  return { error: { code, message, retryable, details }, request_id: randomUUID() };
+const MOCK_SCENARIOS = new Set(['success', 'slow', 'server-error', 'rate-limit']);
+
+function errorResponse(req: Request, code: string, message: string, retryable = false, details?: unknown) {
+  return { error: { code, message, retryable, details }, request_id: req.requestId ?? randomUUID() };
 }
 
 reviewsRouter.post('/reviews', async (req, res, next) => {
@@ -17,15 +20,20 @@ reviewsRouter.post('/reviews', async (req, res, next) => {
     if (!parsed.success) {
       return res
         .status(400)
-        .json(errorResponse('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Payload inválido', false, parsed.error.flatten()));
+        .json(errorResponse(req, 'VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Payload inválido', false, parsed.error.flatten()));
     }
 
     const idempotencyKey = req.header('idempotency-key');
     if (idempotencyKey && idempotencyKey !== parsed.data.external_id) {
-      return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Idempotency-Key deve ser igual a external_id'));
+      return res.status(400).json(errorResponse(req, 'VALIDATION_ERROR', 'Idempotency-Key deve ser igual a external_id'));
     }
 
     const mockScenario = req.header('x-mock-scenario') ?? undefined;
+    if (mockScenario && !MOCK_SCENARIOS.has(mockScenario)) {
+      return res
+        .status(400)
+        .json(errorResponse(req, 'VALIDATION_ERROR', 'x-mock-scenario inválido: valores aceitos são success, slow, server-error, rate-limit'));
+    }
 
     const { review, created } = await createReview({
       externalId: parsed.data.external_id,
@@ -57,7 +65,7 @@ reviewsRouter.get('/reviews/:id', async (req, res, next) => {
   try {
     const review = await getReviewById(req.params.id);
     if (!review) {
-      return res.status(404).json(errorResponse('NOT_FOUND', 'Review não encontrada'));
+      return res.status(404).json(errorResponse(req, 'NOT_FOUND', 'Review não encontrada'));
     }
     res.json(toDetail(review));
   } catch (err) {
@@ -87,5 +95,6 @@ function toDetail(review: Review) {
     attempts: review.attempts,
     created_at: review.createdAt,
     processed_at: review.processedAt,
+    last_error: review.lastError,
   };
 }

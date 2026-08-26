@@ -74,6 +74,49 @@ describe('Reviews API', () => {
 
     const response = await request(app).get(`/reviews/${created.body.id}`);
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ external_id: externalId, status: 'pending', attempts: 0 });
+    expect(response.body).toMatchObject({ external_id: externalId, status: 'pending', attempts: 0, last_error: null });
+  });
+
+  it('POST /reviews with an unrecognized x-mock-scenario header returns 400', async () => {
+    const response = await request(app)
+      .post('/reviews')
+      .set('x-mock-scenario', 'totally-invalid-scenario')
+      .send({ external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 3, comment: 'algo válido' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.request_id).toBeTruthy();
+  });
+
+  it('POST /reviews with a valid x-mock-scenario header is accepted', async () => {
+    const response = await request(app)
+      .post('/reviews')
+      .set('x-mock-scenario', 'success')
+      .send({ external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 3, comment: 'algo válido' });
+
+    expect(response.status).toBe(202);
+  });
+
+  it('every error response includes a request_id', async () => {
+    const response = await request(app).post('/reviews').send({ external_id: 'x' });
+    expect(response.body.request_id).toBeTruthy();
+  });
+
+  it('POST with malformed JSON body returns 400 VALIDATION_ERROR instead of 500', async () => {
+    const response = await request(app)
+      .post('/reviews')
+      .set('Content-Type', 'application/json')
+      .send('{"external_id": "broken", "company_id": ');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.request_id).toBeTruthy();
+  });
+
+  it('GET an unmatched route returns a JSON 404 envelope', async () => {
+    const response = await request(app).get('/this-route-does-not-exist');
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('NOT_FOUND');
+    expect(response.body.request_id).toBeTruthy();
   });
 });
