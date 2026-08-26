@@ -346,12 +346,14 @@ docker compose up --build
 - API: http://localhost:3000
 - API fake de análise: http://localhost:4000
 
-Depois que os containers subirem, abra o frontend: a sidebar leva a "Nova
-Avaliação" (cadastro) e "Avaliações" (lista/monitoramento, tela inicial).
-Cadastre uma avaliação e acompanhe o status mudar de `pending` →
+Depois que os containers subirem, abra o frontend: a sidebar tem duas
+seções — "Área do cliente", com "Enviar Avaliação" (`/avaliar`, cadastro),
+e "Painel interno", com "Monitoramento" (`/admin/avaliacoes`, lista, tela
+inicial). Cadastre uma avaliação e acompanhe o status mudar de `pending` →
 `processing` → `completed`/`failed` na lista (a tela consulta a API por
 polling a cada 3 segundos), com filtros por status/nota/período e busca
-por empresa.
+por empresa. Não há autenticação nem controle de acesso real entre as
+duas áreas — a separação é só de navegação, como o desafio permite.
 
 Para desenvolvimento local sem Docker (backend e frontend rodando fora de
 container, mas dependendo de Postgres/Redis/mock-api), veja
@@ -375,13 +377,19 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
   segundos enquanto houver avaliações `pending`/`processing`, tanto na
   lista quanto no painel de detalhe; SSE/WebSocket ficou de fora por tempo
   — ver limitações abaixo.
-- **Navegação por rotas:** `react-router` separa o cadastro (`/nova-avaliacao`)
-  do monitoramento (`/`, padrão), com a sidebar dirigindo a navegação real
-  (inclusive com fallback SPA no `serve` do container do frontend, para
-  acessar `/nova-avaliacao` direto pela URL funcionar). Filtros (status,
-  nota mínima, período), busca por empresa e paginação da lista de
-  avaliações são resolvidos inteiramente client-side, sem mudar o contrato
-  de `GET /reviews` além de incluir `analysis` na listagem.
+- **Navegação por rotas:** `react-router` separa o cadastro (`/avaliar`) do
+  monitoramento (`/admin/avaliacoes`, padrão; `/` redireciona para lá), com
+  a sidebar dirigindo a navegação real (inclusive com fallback SPA no
+  `serve` do container do frontend, para acessar qualquer rota direto pela
+  URL funcionar).
+- **Filtros e paginação no back-end:** `GET /reviews` aceita `page`,
+  `pageSize`, `status`, `minRating`, `search`, `dateFrom` e `dateTo` como
+  query params e responde `{ data, pagination, counts }` — `counts` reflete
+  os demais filtros aplicados, mas ignora o próprio `status`, para que os
+  chips de status continuem mostrando a contagem correta de cada estado
+  mesmo com um deles selecionado. Decisão: aproximar o comportamento de uma
+  aplicação real (lista grande, filtro que não depende de carregar tudo no
+  cliente) em vez de filtrar em memória no frontend.
 - **Layout responsivo:** `AppShell` do Mantine com sidebar colapsável em
   menu hambúrguer abaixo do breakpoint `sm`, tabela com scroll horizontal
   em telas estreitas e filtros que empilham em vez de espremer.

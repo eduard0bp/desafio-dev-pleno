@@ -35,11 +35,13 @@ npm run dev
 ```
 
 Abre em http://localhost:5173 com hot reload. A sidebar (responsiva —
-colapsa em menu hambúrguer abaixo do breakpoint `sm`) leva a duas rotas:
-`/nova-avaliacao` para cadastrar, e `/` (padrão) para a lista, com filtros
-por status/nota/período, busca por empresa e paginação, fazendo polling do
-status (`pending`/`processing`/`completed`/`failed`) até o resultado da
-análise ficar disponível.
+colapsa em menu hambúrguer abaixo do breakpoint `sm`) tem duas seções:
+"Área do cliente", com `/avaliar` para cadastrar, e "Painel interno", com
+`/admin/avaliacoes` (padrão; `/` redireciona para lá) para a lista, com
+filtros por status/nota/período e busca por empresa resolvidos no
+back-end (`GET /reviews`), fazendo polling do status
+(`pending`/`processing`/`completed`/`failed`) até o resultado da análise
+ficar disponível.
 
 Scripts de build/produção equivalentes: `npm run build` e `npm run preview`.
 
