@@ -74,4 +74,28 @@ describe('ReviewForm', () => {
     expect(screen.getByText('Nota')).toBeInTheDocument();
     expect(screen.getAllByRole('radio').length).toBeGreaterThanOrEqual(5);
   });
+
+  it('shows a live character counter for the comment, capped at 2000', () => {
+    renderForm();
+    expect(screen.getByText('0/2000 caracteres')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Comentário'), { target: { value: 'Muito bom!' } });
+    expect(screen.getByText('10/2000 caracteres')).toBeInTheDocument();
+
+    expect(screen.getByLabelText('Comentário')).toHaveAttribute('maxLength', '2000');
+  });
+
+  it('shows an inline error when the comment exceeds 2000 characters', async () => {
+    const spy = vi.spyOn(api, 'createReview');
+
+    renderForm();
+    fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: 'company-1' } });
+    fireEvent.change(screen.getByLabelText('Comentário'), { target: { value: 'a'.repeat(2001) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('O comentário deve ter no máximo 2000 caracteres')).toBeInTheDocument()
+    );
+    expect(spy).not.toHaveBeenCalled();
+  });
 });

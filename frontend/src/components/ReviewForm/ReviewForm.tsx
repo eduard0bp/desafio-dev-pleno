@@ -3,6 +3,8 @@ import { useForm } from '@mantine/form';
 import { useCreateReviewMutation } from '../../hooks';
 import type { CoreCreateReviewInput } from '../../types';
 
+const COMMENT_MAX_LENGTH = 2000;
+
 function generateExternalId() {
   return `review-${crypto.randomUUID()}`;
 }
@@ -21,14 +23,18 @@ export function ReviewForm() {
     initialValues: emptyFormValues(),
     validate: {
       company_id: (value) => (value.trim().length === 0 ? 'Informe a empresa' : null),
-      comment: (value) => (value.trim().length < 3 ? 'O comentário deve ter pelo menos 3 caracteres' : null),
+      comment: (value) => {
+        if (value.trim().length < 3) return 'O comentário deve ter pelo menos 3 caracteres';
+        if (value.length > COMMENT_MAX_LENGTH) return `O comentário deve ter no máximo ${COMMENT_MAX_LENGTH} caracteres`;
+        return null;
+      },
     },
   });
 
   const mutation = useCreateReviewMutation(() => form.setValues(emptyFormValues()));
 
   return (
-    <Card withBorder p="lg" radius="lg">
+    <Card withBorder p="lg">
       <Stack gap={4} mb="md">
         <Title order={3}>Nova avaliação</Title>
         <Text size="sm" c="dimmed">
@@ -52,6 +58,12 @@ export function ReviewForm() {
             label="Comentário"
             placeholder="Detalhe os pontos fortes e áreas de melhoria..."
             minRows={3}
+            maxLength={COMMENT_MAX_LENGTH}
+            description={
+              <Text component="span" size="xs" c={form.values.comment.length >= COMMENT_MAX_LENGTH ? 'red' : 'dimmed'}>
+                {form.values.comment.length}/{COMMENT_MAX_LENGTH} caracteres
+              </Text>
+            }
             {...form.getInputProps('comment')}
           />
           <Button type="submit" loading={mutation.isPending}>

@@ -59,5 +59,5 @@ export const theme = createTheme({
   colors: { primary, secondary, tertiary, neutral },
   fontFamily,
   headings: { fontFamily },
-  defaultRadius: 'lg',
+  defaultRadius: 'md',
 });
