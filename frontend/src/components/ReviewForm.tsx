@@ -8,14 +8,21 @@ function generateExternalId() {
   return `review-${crypto.randomUUID()}`;
 }
 
+function emptyFormValues() {
+  return {
+    external_id: generateExternalId(),
+    company_id: '',
+    rating: 3,
+    comment: '',
+  };
+}
+
 export function ReviewForm() {
   const queryClient = useQueryClient();
   const form = useForm({
-    initialValues: {
-      external_id: generateExternalId(),
-      company_id: '',
-      rating: 3,
-      comment: '',
+    initialValues: emptyFormValues(),
+    validate: {
+      comment: (value) => (value.trim().length < 3 ? 'O comentário deve ter pelo menos 3 caracteres' : null),
     },
   });
 
@@ -24,7 +31,7 @@ export function ReviewForm() {
     onSuccess: () => {
       notifications.show({ message: 'Avaliação enviada para processamento', color: 'green' });
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
-      form.setValues({ external_id: generateExternalId(), company_id: '', rating: 3, comment: '' });
+      form.setValues(emptyFormValues());
     },
     onError: (error: Error) => {
       notifications.show({ message: error.message, color: 'red' });
