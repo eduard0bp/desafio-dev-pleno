@@ -34,9 +34,12 @@ npm install
 npm run dev
 ```
 
-Abre em http://localhost:5173 com hot reload. A tela cadastra avaliações,
-lista as existentes e faz polling do status (`pending`/`processing`/
-`completed`/`failed`) até o resultado da análise ficar disponível.
+Abre em http://localhost:5173 com hot reload. A sidebar (responsiva —
+colapsa em menu hambúrguer abaixo do breakpoint `sm`) leva a duas rotas:
+`/nova-avaliacao` para cadastrar, e `/` (padrão) para a lista, com filtros
+por status/nota/período, busca por empresa e paginação, fazendo polling do
+status (`pending`/`processing`/`completed`/`failed`) até o resultado da
+análise ficar disponível.
 
 Scripts de build/produção equivalentes: `npm run build` e `npm run preview`.
 

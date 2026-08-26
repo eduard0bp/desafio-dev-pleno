@@ -346,9 +346,12 @@ docker compose up --build
 - API: http://localhost:3000
 - API fake de análise: http://localhost:4000
 
-Depois que os containers subirem, abra o frontend, cadastre uma avaliação e
-acompanhe o status mudar de `pending` → `processing` → `completed`/`failed`
-na lista (a tela consulta a API por polling a cada 3 segundos).
+Depois que os containers subirem, abra o frontend: a sidebar leva a "Nova
+Avaliação" (cadastro) e "Avaliações" (lista/monitoramento, tela inicial).
+Cadastre uma avaliação e acompanhe o status mudar de `pending` →
+`processing` → `completed`/`failed` na lista (a tela consulta a API por
+polling a cada 3 segundos), com filtros por status/nota/período e busca
+por empresa.
 
 Para desenvolvimento local sem Docker (backend e frontend rodando fora de
 container, mas dependendo de Postgres/Redis/mock-api), veja
@@ -372,6 +375,16 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
   segundos enquanto houver avaliações `pending`/`processing`, tanto na
   lista quanto no painel de detalhe; SSE/WebSocket ficou de fora por tempo
   — ver limitações abaixo.
+- **Navegação por rotas:** `react-router` separa o cadastro (`/nova-avaliacao`)
+  do monitoramento (`/`, padrão), com a sidebar dirigindo a navegação real
+  (inclusive com fallback SPA no `serve` do container do frontend, para
+  acessar `/nova-avaliacao` direto pela URL funcionar). Filtros (status,
+  nota mínima, período), busca por empresa e paginação da lista de
+  avaliações são resolvidos inteiramente client-side, sem mudar o contrato
+  de `GET /reviews` além de incluir `analysis` na listagem.
+- **Layout responsivo:** `AppShell` do Mantine com sidebar colapsável em
+  menu hambúrguer abaixo do breakpoint `sm`, tabela com scroll horizontal
+  em telas estreitas e filtros que empilham em vez de espremer.
 - **Versão do Prisma mantida na major 6:** `@prisma/client`/`prisma` foram
   fixados em `^6.19.3` em vez de "latest" — decisão deliberada para evitar
   as mudanças de breaking change do Prisma 7+/8+ no meio do desafio.
@@ -400,7 +413,6 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
   review fica presa em `pending`). Próximo passo: outbox pattern ou um job
   de reconciliação que varre reviews `pending` antigas e republica o job.
 - Sem SSE/WebSocket — a atualização de status na tela depende de polling.
-- Sem filtros ou busca na lista de avaliações.
 - Sem alertas para avaliações negativas.
 - Sem endpoint de reprocessamento manual para reviews `failed`.
 - `VITE_API_URL` é definida em build time da imagem Docker do frontend
