@@ -32,9 +32,17 @@ describe('ReviewList', () => {
     expect(screen.getByText('Concluído')).toBeInTheDocument();
   });
 
+  // TanStack Query retries failed queries by default (3 retries with backoff),
+  // so the error state can take several seconds to surface. Both the test's own
+  // timeout and the waitFor timeout are extended here rather than disabling
+  // retries in the component (which would reduce production resilience to
+  // transient network blips during polling).
   it('shows an error message when the API call fails', async () => {
     vi.spyOn(api, 'listReviews').mockRejectedValue(new Error('Falha ao carregar avaliações'));
     renderList();
-    await waitFor(() => expect(screen.getByText('Falha ao carregar avaliações')).toBeInTheDocument());
-  });
+    await waitFor(
+      () => expect(screen.getByText('Falha ao carregar avaliações')).toBeInTheDocument(),
+      { timeout: 10000 }
+    );
+  }, 15000);
 });

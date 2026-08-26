@@ -13,7 +13,6 @@ export function ReviewList() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['reviews'],
     queryFn: listReviews,
-    retry: false,
     refetchInterval: (query) => {
       const reviews = query.state.data ?? [];
       return reviews.some((r) => ACTIVE_STATUSES.has(r.status)) ? 3000 : false;

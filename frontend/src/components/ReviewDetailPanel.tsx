@@ -6,7 +6,6 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['review', reviewId],
     queryFn: () => getReview(reviewId),
-    retry: false,
   });
 
   if (isLoading) return <Loader size="sm" />;
