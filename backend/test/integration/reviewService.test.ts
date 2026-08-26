@@ -36,8 +36,13 @@ describe('reviewService', () => {
     await createReview({ externalId: idB, companyId: 'c', rating: 1, comment: 'b' });
 
     const reviews = await listReviews();
-    const index = reviews.findIndex((r) => r.externalId === idB);
-    expect(index).toBeGreaterThanOrEqual(0);
+    const indexA = reviews.findIndex((r) => r.externalId === idA);
+    const indexB = reviews.findIndex((r) => r.externalId === idB);
+
+    expect(indexA).toBeGreaterThanOrEqual(0);
+    expect(indexB).toBeGreaterThanOrEqual(0);
+    // idB was created after idA, so in descending order it must appear first (lower index).
+    expect(indexB).toBeLessThan(indexA);
   });
 
   it('getReviewById returns null for a nonexistent id', async () => {
