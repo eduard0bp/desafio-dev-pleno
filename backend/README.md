@@ -9,7 +9,7 @@ frontend) com um único comando, veja o [`README.md` da raiz](../README.md).
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 24+
 - Um Postgres e um Redis acessíveis (o jeito mais simples é rodar
   `docker compose up postgres redis mock-analysis-api` a partir da raiz do
   repositório e apontar as variáveis de ambiente abaixo para eles).
@@ -79,10 +79,19 @@ arquivo apague dados que outro arquivo, rodando em paralelo, ainda estava
 usando — o efeito colateral é que `npm run test:integration` roda mais
 devagar que se fosse paralelo, o que é intencional.
 
+## Header `x-mock-scenario`
+
+`POST /reviews` aceita um header opcional `x-mock-scenario` (`success`,
+`slow`, `server-error` ou `rate-limit`) que é repassado ao worker e, por ele,
+à API fake de análise — serve para testes/demonstrações determinísticas do
+comportamento de retry (ex.: forçar um `503` com `Retry-After` sem depender
+das falhas periódicas aleatórias do mock). Um valor fora dessa lista é
+rejeitado com `400 VALIDATION_ERROR` antes de chegar à fila.
+
 ## Nota sobre versões
 
-`prisma` e `@prisma/client` estão fixados em `6.19.3` (não `latest`) — uma
-escolha deliberada para não expor o projeto a mudanças de breaking change
-das versões 7+/8+ do Prisma no meio do desenvolvimento. Ao atualizar o
-Prisma neste projeto, atualize as duas dependências juntas e rode a suíte
-de testes de integração antes de aceitar a mudança.
+`prisma` e `@prisma/client` estão mantidos na major 6 (`^6.19.3`, não
+`latest`) — uma escolha deliberada para não expor o projeto a mudanças de
+breaking change das versões 7+/8+ do Prisma no meio do desenvolvimento. Ao
+atualizar o Prisma neste projeto, atualize as duas dependências juntas e
+rode a suíte de testes de integração antes de aceitar a mudança.

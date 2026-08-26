@@ -70,7 +70,7 @@ export function startWorker(): Worker<ReviewJobData> {
     if (job.attemptsMade >= maxAttempts) {
       await prisma.review
         .update({ where: { id: job.data.reviewId }, data: { status: 'failed', lastError: { message: err.message } } })
-        .catch(() => undefined);
+        .catch((updateErr) => console.error('Failed to mark review as failed', updateErr));
     }
   });
 
