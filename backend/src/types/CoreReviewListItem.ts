@@ -1,5 +1,5 @@
-import type { CoreReviewStatus } from './reviewStatus';
-import type { CoreReviewAnalysis } from './reviewAnalysis';
+import type { CoreReviewStatus } from './CoreReviewStatus';
+import type { CoreReviewAnalysis } from './CoreReviewAnalysis';
 
 export interface CoreReviewListItem {
   id: string;

@@ -1,5 +1,5 @@
-import type { CoreReviewListItem } from './reviewListItem';
-import type { CoreReviewLastError } from './reviewLastError';
+import type { CoreReviewListItem } from './CoreReviewListItem';
+import type { CoreReviewLastError } from './CoreReviewLastError';
 
 export interface CoreReviewDetail extends CoreReviewListItem {
   comment: string;
