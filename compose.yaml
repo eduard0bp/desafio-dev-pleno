@@ -59,5 +59,46 @@ services:
       retries: 10
       start_period: 3s
 
+  backend-api:
+    build:
+      context: ./backend
+    container_name: desafio-backend-api
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-falae}:${POSTGRES_PASSWORD:-falae}@postgres:5432/${POSTGRES_DB:-falae}?schema=public
+      REDIS_URL: redis://redis:6379
+      MOCK_ANALYSIS_API_URL: http://mock-analysis-api:4000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-analysis-api:
+        condition: service_healthy
+
+  backend-worker:
+    build:
+      context: ./backend
+    container_name: desafio-backend-worker
+    restart: unless-stopped
+    command: node dist/worker.js
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-falae}:${POSTGRES_PASSWORD:-falae}@postgres:5432/${POSTGRES_DB:-falae}?schema=public
+      REDIS_URL: redis://redis:6379
+      MOCK_ANALYSIS_API_URL: http://mock-analysis-api:4000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-analysis-api:
+        condition: service_healthy
+      backend-api:
+        condition: service_started
+
 volumes:
   postgres-data:
