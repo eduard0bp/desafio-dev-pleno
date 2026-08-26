@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { randomUUID } from 'node:crypto';
 import { reviewsRouter } from './routes/reviews';
+import { checkHealth } from './services/healthService';
 
 export function createApp() {
   const app = express();
@@ -14,8 +15,10 @@ export function createApp() {
 
   app.use(express.json());
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
+  app.get('/health', async (_req, res) => {
+    const { postgres, redis } = await checkHealth();
+    const healthy = postgres && redis;
+    res.status(healthy ? 200 : 503).json({ status: healthy ? 'ok' : 'degraded', postgres, redis });
   });
 
   app.use(reviewsRouter);
