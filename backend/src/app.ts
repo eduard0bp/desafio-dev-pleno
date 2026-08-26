@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { reviewsRouter } from './routes/reviews';
 
 export function createApp() {
   const app = express();
@@ -9,6 +10,8 @@ export function createApp() {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  app.use(reviewsRouter);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);
