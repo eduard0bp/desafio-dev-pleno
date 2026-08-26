@@ -30,10 +30,19 @@ describe('reviewService', () => {
   });
 
   it('lists reviews ordered by created_at desc', async () => {
+    // createdAt is stored with millisecond precision, and two sequential
+    // creates can land in the same millisecond (Postgres does not
+    // guarantee tie order), so set explicit, clearly-separated createdAt
+    // values directly rather than racing the wall clock.
     const idA = `test-${randomUUID()}`;
     const idB = `test-${randomUUID()}`;
-    await createReview({ externalId: idA, companyId: 'c', rating: 1, comment: 'a' });
-    await createReview({ externalId: idB, companyId: 'c', rating: 1, comment: 'b' });
+    const { review: reviewA } = await createReview({ externalId: idA, companyId: 'c', rating: 1, comment: 'a' });
+    const { review: reviewB } = await createReview({ externalId: idB, companyId: 'c', rating: 1, comment: 'b' });
+
+    const earlier = new Date('2026-01-01T00:00:00.000Z');
+    const later = new Date('2026-01-01T00:00:10.000Z');
+    await prisma.review.update({ where: { id: reviewA.id }, data: { createdAt: earlier } });
+    await prisma.review.update({ where: { id: reviewB.id }, data: { createdAt: later } });
 
     const reviews = await listReviews();
     const indexA = reviews.findIndex((r) => r.externalId === idA);
@@ -41,7 +50,7 @@ describe('reviewService', () => {
 
     expect(indexA).toBeGreaterThanOrEqual(0);
     expect(indexB).toBeGreaterThanOrEqual(0);
-    // idB was created after idA, so in descending order it must appear first (lower index).
+    // idB has the later createdAt, so in descending order it must appear first (lower index).
     expect(indexB).toBeLessThan(indexA);
   });
 
