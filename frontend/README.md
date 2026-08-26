@@ -9,7 +9,7 @@ comando, veja o [`README.md` da raiz](../README.md).
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 24+
 - A API do backend acessível (localmente via `npm run dev` em
   [`backend/`](../backend/README.md), ou via
   `docker compose up backend-api backend-worker postgres redis mock-analysis-api`
