@@ -359,7 +359,7 @@ container, mas dependendo de Postgres/Redis/mock-api), veja
 - **Idempotência:** `external_id` é a chave única de deduplicação no banco
   (constraint `UNIQUE` no Postgres via Prisma). Se o header `Idempotency-Key`
   for enviado, ele precisa ser igual ao `external_id` do corpo — do
-  contrário a API responde `422`. Um `POST` repetido com o mesmo
+  contrário a API responde `400`. Um `POST` repetido com o mesmo
   `external_id` retorna a review já existente em vez de criar uma nova.
 - **Fila:** BullMQ + Redis. O worker roda em um processo separado
   (`npm run dev:worker` / `start:worker`, e um serviço próprio no
