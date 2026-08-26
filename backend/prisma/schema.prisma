@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Review {
+  id          String       @id @default(uuid())
+  externalId  String       @unique @map("external_id")
+  companyId   String       @map("company_id")
+  rating      Int
+  comment     String
+  status      ReviewStatus @default(pending)
+  analysis    Json?
+  attempts    Int          @default(0)
+  lastError   Json?        @map("last_error")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  processedAt DateTime?    @map("processed_at")
+
+  @@map("reviews")
+}
+
+enum ReviewStatus {
+  pending
+  processing
+  completed
+  failed
+}
