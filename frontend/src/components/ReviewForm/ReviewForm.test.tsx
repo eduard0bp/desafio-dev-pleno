@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReviewForm } from '../../src/components/ReviewForm';
-import * as api from '../../src/api/reviews';
+import { ReviewForm } from './ReviewForm';
+import * as api from '../../api';
 
 function renderForm() {
   const queryClient = new QueryClient();
@@ -45,5 +45,22 @@ describe('ReviewForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
 
     await waitFor(() => expect(screen.getByText('Falha ao enviar')).toBeInTheDocument());
+  });
+
+  it('shows an inline error when the comment is too short', async () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: 'company-1' } });
+    fireEvent.change(screen.getByLabelText('Comentário'), { target: { value: 'ok' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('O comentário deve ter pelo menos 3 caracteres')).toBeInTheDocument()
+    );
+  });
+
+  it('renders a star rating control', () => {
+    renderForm();
+    expect(screen.getByText('Nota')).toBeInTheDocument();
+    expect(screen.getAllByRole('radio').length).toBeGreaterThanOrEqual(5);
   });
 });

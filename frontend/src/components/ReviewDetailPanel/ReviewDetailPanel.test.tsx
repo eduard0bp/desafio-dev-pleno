@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReviewDetailPanel, getDetailRefetchInterval } from '../../src/components/ReviewDetailPanel';
-import type { ReviewDetail } from '../../src/api/reviews';
-import * as api from '../../src/api/reviews';
+import { ReviewDetailPanel } from './ReviewDetailPanel';
+import type { CoreReviewDetail } from '../../types';
+import * as api from '../../api';
 
 function renderPanel(reviewId = '1') {
   const queryClient = new QueryClient();
@@ -17,7 +17,7 @@ function renderPanel(reviewId = '1') {
   );
 }
 
-function makeDetail(overrides: Partial<ReviewDetail>): ReviewDetail {
+function makeDetail(overrides: Partial<CoreReviewDetail>): CoreReviewDetail {
   return {
     id: '1',
     external_id: 'review-1',
@@ -33,28 +33,6 @@ function makeDetail(overrides: Partial<ReviewDetail>): ReviewDetail {
     ...overrides,
   };
 }
-
-describe('getDetailRefetchInterval', () => {
-  it('returns a truthy interval while the review is pending', () => {
-    expect(getDetailRefetchInterval(makeDetail({ status: 'pending' }))).toBe(3000);
-  });
-
-  it('returns a truthy interval while the review is processing', () => {
-    expect(getDetailRefetchInterval(makeDetail({ status: 'processing' }))).toBe(3000);
-  });
-
-  it('stops polling once the review is completed', () => {
-    expect(getDetailRefetchInterval(makeDetail({ status: 'completed' }))).toBe(false);
-  });
-
-  it('stops polling once the review is failed', () => {
-    expect(getDetailRefetchInterval(makeDetail({ status: 'failed' }))).toBe(false);
-  });
-
-  it('stops polling when there is no data yet', () => {
-    expect(getDetailRefetchInterval(undefined)).toBe(false);
-  });
-});
 
 describe('ReviewDetailPanel', () => {
   it('refreshes a processing review until it reaches a terminal state', async () => {

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import { StatusBadge } from '../../src/components/StatusBadge';
+import { StatusBadge } from './StatusBadge';
+import type { CoreReviewStatus } from '../../types';
 
-function renderBadge(status: 'pending' | 'processing' | 'completed' | 'failed') {
+function renderBadge(status: CoreReviewStatus) {
   render(
     <MantineProvider>
       <StatusBadge status={status} />
@@ -15,6 +16,11 @@ describe('StatusBadge', () => {
   it('shows "Pendente" for pending', () => {
     renderBadge('pending');
     expect(screen.getByText('Pendente')).toBeInTheDocument();
+  });
+
+  it('shows "Processando" for processing', () => {
+    renderBadge('processing');
+    expect(screen.getByText('Processando')).toBeInTheDocument();
   });
 
   it('shows "Concluído" for completed', () => {

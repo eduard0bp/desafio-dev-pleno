@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createReview, listReviews, getReview } from '../../src/api/reviews';
+import { createReview, listReviews, getReview } from './reviewsApi';
 
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn());
@@ -29,7 +29,7 @@ describe('reviews api client', () => {
   it('listReviews returns data', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ data: [{ id: '1', external_id: 'x', rating: 5, status: 'pending', created_at: '2026-01-01' }] }),
+      json: async () => ({ data: [{ id: '1', external_id: 'x', company_id: 'c', rating: 5, status: 'pending', analysis: null, created_at: '2026-01-01' }] }),
     } as Response);
 
     const result = await listReviews();

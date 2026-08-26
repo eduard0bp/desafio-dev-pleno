@@ -1,16 +1,22 @@
-import { Container, Divider, Stack, Title } from '@mantine/core';
+import { AppShell, Container, Stack } from '@mantine/core';
+import { Sidebar } from './components/Sidebar';
 import { ReviewForm } from './components/ReviewForm';
 import { ReviewList } from './components/ReviewList';
 
 export default function App() {
   return (
-    <Container size="md" py="xl">
-      <Stack gap="lg">
-        <Title order={1}>Falaê! Avaliações</Title>
-        <ReviewForm />
-        <Divider label="Avaliações cadastradas" />
-        <ReviewList />
-      </Stack>
-    </Container>
+    <AppShell navbar={{ width: 240, breakpoint: 'sm' }} padding="lg">
+      <AppShell.Navbar>
+        <Sidebar />
+      </AppShell.Navbar>
+      <AppShell.Main>
+        <Container size="lg">
+          <Stack gap="xl">
+            <ReviewForm />
+            <ReviewList />
+          </Stack>
+        </Container>
+      </AppShell.Main>
+    </AppShell>
   );
 }
