@@ -17,12 +17,18 @@ export interface ReviewAnalysis {
   matched_keywords: string[];
 }
 
+export interface ReviewLastError {
+  message: string;
+  code?: string;
+}
+
 export interface ReviewDetail extends ReviewListItem {
   company_id: string;
   comment: string;
   analysis: ReviewAnalysis | null;
   attempts: number;
   processed_at: string | null;
+  last_error: ReviewLastError | null;
 }
 
 export interface CreateReviewInput {
