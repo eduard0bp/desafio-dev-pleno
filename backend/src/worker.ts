@@ -5,6 +5,7 @@ import { REVIEW_QUEUE_NAME, type ReviewJobData } from './queue/reviewQueue';
 import { prisma } from './lib/prisma';
 import { analyzeReview, RetryableAnalysisError, NonRetryableAnalysisError } from './services/analysisClient';
 import { computeBackoffDelayMs } from './lib/retry';
+import { startReconciliationLoop } from './services/reconciliationService';
 
 type JobLike = { data: ReviewJobData; attemptsMade: number };
 
@@ -79,5 +80,6 @@ export function startWorker(): Worker<ReviewJobData> {
 
 if (process.env.NODE_ENV !== 'test') {
   startWorker();
+  startReconciliationLoop();
   console.log('Review processing worker started');
 }
