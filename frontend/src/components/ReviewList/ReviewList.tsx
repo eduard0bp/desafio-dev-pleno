@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Badge, Chip, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Badge, Chip, Flex, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useReviewsQuery } from '../../hooks';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
@@ -135,12 +135,17 @@ export function ReviewList() {
             </Table>
           </Table.ScrollContainer>
 
-          <Group justify="space-between" wrap="wrap" gap="sm">
+          <Flex
+            direction={{ base: 'column', xs: 'row' }}
+            justify={{ base: 'center', xs: 'space-between' }}
+            align="center"
+            gap="sm"
+          >
             <Text size="sm" c="dimmed">
               Mostrando {rangeStart}-{rangeEnd} de {filters.filteredCount} avaliações
             </Text>
             <Pagination total={filters.totalPages} value={filters.page} onChange={filters.setPage} />
-          </Group>
+          </Flex>
         </>
       )}
 

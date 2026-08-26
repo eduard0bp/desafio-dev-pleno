@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 test('submits a review and follows its status until completion', async ({ page }) => {
   await page.goto('/');
 
-  await page.getByRole('link', { name: 'Nova Avaliação' }).click();
-  await expect(page).toHaveURL(/\/nova-avaliacao$/);
+  await page.getByRole('link', { name: 'Enviar Avaliação' }).click();
+  await expect(page).toHaveURL(/\/avaliar$/);
 
   const externalId = `e2e-${Date.now()}`;
   const companyName = `Empresa E2E ${Date.now()}`;
@@ -13,8 +13,8 @@ test('submits a review and follows its status until completion', async ({ page }
   await page.getByLabel('Comentário').fill('Chegou frio e atrasado, muito ruim.');
   await page.getByRole('button', { name: 'Enviar avaliação' }).click();
 
-  await page.getByRole('link', { name: 'Avaliações' }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole('link', { name: 'Monitoramento' }).click();
+  await expect(page).toHaveURL(/\/admin\/avaliacoes$/);
 
   const row = page.getByRole('row').filter({ hasText: companyName });
   await expect(row).toBeVisible();

@@ -28,9 +28,10 @@ export default function App() {
 
       <AppShell.Main>
         <Routes>
-          <Route path="/" element={<AvaliacoesPage />} />
-          <Route path="/nova-avaliacao" element={<NovaAvaliacaoPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<Navigate to="/admin/avaliacoes" replace />} />
+          <Route path="/avaliar" element={<NovaAvaliacaoPage />} />
+          <Route path="/admin/avaliacoes" element={<AvaliacoesPage />} />
+          <Route path="*" element={<Navigate to="/admin/avaliacoes" replace />} />
         </Routes>
       </AppShell.Main>
     </AppShell>
