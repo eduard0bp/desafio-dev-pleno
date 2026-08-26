@@ -13,16 +13,35 @@ async function parseErrorMessage(response: Response, fallback: string): Promise<
   return body?.error?.message ?? fallback;
 }
 
-export async function createReview(input: CoreCreateReviewInput): Promise<CoreCreateReviewResult> {
-  const response = await fetch(`${API_URL}/reviews`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
+/**
+ * Wraps fetch so both HTTP-level errors (response.ok === false) and
+ * connection-level failures (the API is unreachable — fetch() itself
+ * throws a raw "Failed to fetch"/"NetworkError" TypeError) surface the
+ * same friendly, translated message instead of a browser-internal one.
+ */
+async function requestJson<T>(url: string, options: RequestInit | undefined, fallbackMessage: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(url, options);
+  } catch {
+    throw new Error(fallbackMessage);
+  }
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, 'Falha ao enviar avaliação'));
+    throw new Error(await parseErrorMessage(response, fallbackMessage));
   }
   return response.json();
+}
+
+export async function createReview(input: CoreCreateReviewInput): Promise<CoreCreateReviewResult> {
+  return requestJson(
+    `${API_URL}/reviews`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+    'Falha ao enviar avaliação'
+  );
 }
 
 function buildListReviewsQuery(params: CoreListReviewsParams): string {
@@ -38,17 +57,9 @@ function buildListReviewsQuery(params: CoreListReviewsParams): string {
 }
 
 export async function listReviews(params: CoreListReviewsParams): Promise<CoreListReviewsResult> {
-  const response = await fetch(`${API_URL}/reviews?${buildListReviewsQuery(params)}`);
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, 'Falha ao carregar avaliações'));
-  }
-  return response.json();
+  return requestJson(`${API_URL}/reviews?${buildListReviewsQuery(params)}`, undefined, 'Falha ao carregar avaliações');
 }
 
 export async function getReview(id: string): Promise<CoreReviewDetail> {
-  const response = await fetch(`${API_URL}/reviews/${id}`);
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, 'Falha ao carregar avaliação'));
-  }
-  return response.json();
+  return requestJson(`${API_URL}/reviews/${id}`, undefined, 'Falha ao carregar avaliação');
 }

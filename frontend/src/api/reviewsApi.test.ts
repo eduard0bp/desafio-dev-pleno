@@ -45,6 +45,12 @@ describe('reviews api client', () => {
     expect(calledUrl).toContain('search=acme');
   });
 
+  it('listReviews throws a friendly message when the connection itself fails (not just a non-2xx response)', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    await expect(listReviews({ page: 1, pageSize: 10 })).rejects.toThrow('Falha ao carregar avaliações');
+  });
+
   it('getReview returns the detail', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,

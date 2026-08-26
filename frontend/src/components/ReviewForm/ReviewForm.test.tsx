@@ -58,6 +58,17 @@ describe('ReviewForm', () => {
     );
   });
 
+  it('shows inline errors instead of submitting when required fields are empty', async () => {
+    const spy = vi.spyOn(api, 'createReview');
+
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
+
+    await waitFor(() => expect(screen.getByText('Informe a empresa')).toBeInTheDocument());
+    expect(screen.getByText('O comentário deve ter pelo menos 3 caracteres')).toBeInTheDocument();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it('renders a star rating control', () => {
     renderForm();
     expect(screen.getByText('Nota')).toBeInTheDocument();

@@ -41,8 +41,6 @@ export function ReviewForm() {
           <TextInput
             label="Empresa"
             placeholder="Ex: Acme Corp Industries"
-            required
-            withAsterisk={false}
             {...form.getInputProps('company_id')}
           />
           <Input.Wrapper label="Nota">
@@ -53,8 +51,6 @@ export function ReviewForm() {
           <Textarea
             label="Comentário"
             placeholder="Detalhe os pontos fortes e áreas de melhoria..."
-            required
-            withAsterisk={false}
             minRows={3}
             {...form.getInputProps('comment')}
           />

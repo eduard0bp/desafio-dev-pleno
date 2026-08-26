@@ -2,12 +2,14 @@ import { useState } from 'react';
 import {
   Alert,
   Badge,
+  Center,
   Chip,
   Flex,
   Group,
   Loader,
   Modal,
   Pagination,
+  Rating,
   Select,
   Stack,
   Table,
@@ -21,6 +23,7 @@ import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
 import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
+import type { CoreReviewStatusCounts } from '../../types';
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -39,6 +42,8 @@ const RATING_OPTIONS = [
   { value: '1', label: '1+ estrela' },
 ];
 
+const EMPTY_COUNTS: CoreReviewStatusCounts = { all: 0, pending: 0, processing: 0, completed: 0, failed: 0 };
+
 const PAGE_SIZE = 10;
 
 export function ReviewList() {
@@ -55,9 +60,17 @@ export function ReviewList() {
     dateTo: filters.dateTo ?? undefined,
   });
 
-  if (isLoading) return <Loader />;
-  if (isError) return <Alert color="red">{(error as Error).message}</Alert>;
-  if (!data) return null;
+  // Only the very first load (no data yet, of any kind) replaces the whole
+  // page with a spinner. Every other state — an error, an empty result, a
+  // page of reviews — renders inside the persistent filters/table shell
+  // below, so the controls never disappear from under the user.
+  if (isLoading) {
+    return (
+      <Center py="xl">
+        <Loader />
+      </Center>
+    );
+  }
 
   const hasActiveFilters =
     filters.status !== 'all' ||
@@ -66,12 +79,16 @@ export function ReviewList() {
     filters.dateFrom != null ||
     filters.dateTo != null;
 
-  if (data.pagination.total === 0 && !hasActiveFilters) {
-    return <Text c="dimmed">Nenhuma avaliação cadastrada ainda.</Text>;
-  }
+  const emptyStateMessage = hasActiveFilters
+    ? 'Nenhuma avaliação encontrada para os filtros selecionados.'
+    : 'Nenhuma avaliação cadastrada ainda.';
 
-  const rangeStart = (data.pagination.page - 1) * data.pagination.pageSize + 1;
-  const rangeEnd = Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.total);
+  const counts = data?.counts ?? EMPTY_COUNTS;
+  const reviews = data?.data ?? [];
+  const pagination = data?.pagination;
+
+  const rangeStart = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+  const rangeEnd = pagination ? Math.min(pagination.page * pagination.pageSize, pagination.total) : 0;
 
   return (
     <Stack gap="lg">
@@ -86,7 +103,7 @@ export function ReviewList() {
         <Group gap="xs" wrap="wrap">
           {STATUS_CHIPS.map((chip) => (
             <Chip key={chip.value} value={chip.value} variant="filled" color="primary">
-              {chip.label} ({data.counts[chip.value]})
+              {chip.label} ({counts[chip.value]})
             </Chip>
           ))}
         </Group>
@@ -123,66 +140,82 @@ export function ReviewList() {
         />
       </Group>
 
-      {data.pagination.total === 0 ? (
-        <Text c="dimmed">Nenhuma avaliação encontrada para os filtros selecionados.</Text>
-      ) : (
-        <>
-          <Table.ScrollContainer minWidth={640}>
-            <Table highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Empresa</Table.Th>
-                  <Table.Th>Nota</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Sentimento</Table.Th>
-                  <Table.Th>Categoria</Table.Th>
-                  <Table.Th>Data</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {data.data.map((review) => {
-                  const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
-                  const category = review.analysis
-                    ? (CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category)
-                    : undefined;
-                  return (
-                    <Table.Tr key={review.id} onClick={() => setSelectedId(review.id)} style={{ cursor: 'pointer' }}>
-                      <Table.Td>{review.company_id}</Table.Td>
-                      <Table.Td>{review.rating} ★</Table.Td>
-                      <Table.Td>
-                        <StatusBadge status={review.status} />
-                      </Table.Td>
-                      <Table.Td>
-                        {sentiment ? (
-                          <Badge color={sentiment.color}>{sentiment.label}</Badge>
-                        ) : (
-                          <Text c="dimmed" size="sm">
-                            —
-                          </Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>
-                        {category ?? (
-                          <Text c="dimmed" size="sm">
-                            —
-                          </Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>{new Date(review.created_at).toLocaleDateString('pt-BR')}</Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+      <Table.ScrollContainer minWidth={640}>
+        <Table highlightOnHover>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Empresa</Table.Th>
+              <Table.Th>Nota</Table.Th>
+              <Table.Th>Status</Table.Th>
+              <Table.Th>Sentimento</Table.Th>
+              <Table.Th>Categoria</Table.Th>
+              <Table.Th>Data</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {isError ? (
+              <Table.Tr>
+                <Table.Td colSpan={6} p={0}>
+                  <Alert color="red" radius={0}>
+                    {(error as Error).message}
+                  </Alert>
+                </Table.Td>
+              </Table.Tr>
+            ) : reviews.length === 0 ? (
+              <Table.Tr>
+                <Table.Td colSpan={6}>
+                  <Text c="dimmed" ta="center" py="md">
+                    {emptyStateMessage}
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : (
+              reviews.map((review) => {
+                const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
+                const category = review.analysis
+                  ? (CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category)
+                  : undefined;
+                return (
+                  <Table.Tr key={review.id} onClick={() => setSelectedId(review.id)} style={{ cursor: 'pointer' }}>
+                    <Table.Td>{review.company_id}</Table.Td>
+                    <Table.Td>
+                      <Rating value={review.rating} color="tertiary" size="sm" readOnly />
+                    </Table.Td>
+                    <Table.Td>
+                      <StatusBadge status={review.status} />
+                    </Table.Td>
+                    <Table.Td>
+                      {sentiment ? (
+                        <Badge color={sentiment.color}>{sentiment.label}</Badge>
+                      ) : (
+                        <Text c="dimmed" size="sm">
+                          —
+                        </Text>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      {category ?? (
+                        <Text c="dimmed" size="sm">
+                          —
+                        </Text>
+                      )}
+                    </Table.Td>
+                    <Table.Td>{new Date(review.created_at).toLocaleDateString('pt-BR')}</Table.Td>
+                  </Table.Tr>
+                );
+              })
+            )}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
 
-          <Flex direction={{ base: 'column', xs: 'row' }} justify={{ base: 'center', xs: 'space-between' }} align="center" gap="sm">
-            <Text size="sm" c="dimmed">
-              Mostrando {rangeStart}-{rangeEnd} de {data.pagination.total} avaliações
-            </Text>
-            <Pagination total={data.pagination.totalPages} value={data.pagination.page} onChange={filters.setPage} />
-          </Flex>
-        </>
+      {!isError && pagination && pagination.total > 0 && (
+        <Flex direction={{ base: 'column', xs: 'row' }} justify={{ base: 'center', xs: 'space-between' }} align="center" gap="sm">
+          <Text size="sm" c="dimmed">
+            Mostrando {rangeStart}-{rangeEnd} de {pagination.total} avaliações
+          </Text>
+          <Pagination total={pagination.totalPages} value={pagination.page} onChange={filters.setPage} />
+        </Flex>
       )}
 
       <Modal opened={selectedId != null} onClose={() => setSelectedId(null)} title="Detalhe da avaliação" centered>
