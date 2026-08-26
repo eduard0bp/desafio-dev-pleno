@@ -3,11 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AvaliacoesPage } from './AvaliacoesPage';
+import { getMockCoreListReviewsResult } from '../../testUtils';
 import * as api from '../../api';
 
 describe('AvaliacoesPage', () => {
   it('renders the reviews monitoring list', async () => {
-    vi.spyOn(api, 'listReviews').mockResolvedValue([]);
+    vi.spyOn(api, 'listReviews').mockResolvedValue(
+      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } })
+    );
     const queryClient = new QueryClient();
     render(
       <MantineProvider>

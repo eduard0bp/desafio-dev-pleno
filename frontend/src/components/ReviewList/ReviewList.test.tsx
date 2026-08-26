@@ -3,7 +3,8 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReviewList } from './ReviewList';
-import { getMockCoreReviewListItem } from '../../testUtils';
+import { getMockCoreReviewListItem, getMockCoreListReviewsResult } from '../../testUtils';
+import type { CoreListReviewsParams, CoreListReviewsResult, CoreReviewListItem } from '../../types';
 import * as api from '../../api';
 
 function renderList() {
@@ -17,21 +18,64 @@ function renderList() {
   );
 }
 
+/**
+ * Stands in for the real backend: applies the same status/search/pagination
+ * semantics GET /reviews implements, over an in-memory list, so component
+ * interactions (clicking a status pill, typing a search, changing page)
+ * exercise a real request/response round-trip instead of local slicing.
+ */
+function fakeListReviews(allReviews: CoreReviewListItem[]) {
+  return async (params: CoreListReviewsParams): Promise<CoreListReviewsResult> => {
+    const filtered = allReviews.filter((review) => {
+      if (params.status && review.status !== params.status) return false;
+      if (params.search && !review.company_id.toLowerCase().includes(params.search.toLowerCase())) return false;
+      return true;
+    });
+
+    const start = (params.page - 1) * params.pageSize;
+    const data = filtered.slice(start, start + params.pageSize);
+
+    const counts = { all: 0, pending: 0, processing: 0, completed: 0, failed: 0 };
+    for (const review of allReviews) {
+      if (params.search && !review.company_id.toLowerCase().includes(params.search.toLowerCase())) continue;
+      counts.all += 1;
+      counts[review.status] += 1;
+    }
+
+    return {
+      data,
+      pagination: {
+        page: params.page,
+        pageSize: params.pageSize,
+        total: filtered.length,
+        totalPages: Math.max(1, Math.ceil(filtered.length / params.pageSize)),
+      },
+      counts,
+    };
+  };
+}
+
 describe('ReviewList', () => {
   it('shows an empty state when there are no reviews', async () => {
-    vi.spyOn(api, 'listReviews').mockResolvedValue([]);
+    vi.spyOn(api, 'listReviews').mockResolvedValue(
+      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } })
+    );
     renderList();
     await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
   });
 
   it('shows the reviews returned by the API, including analysis', async () => {
-    vi.spyOn(api, 'listReviews').mockResolvedValue([
-      getMockCoreReviewListItem({
-        company_id: 'Acme Corp',
-        status: 'completed',
-        analysis: { sentiment: 'positive', category: 'delivery', confidence: 0.9, matched_keywords: [] },
-      }),
-    ]);
+    vi.spyOn(api, 'listReviews').mockResolvedValue(
+      getMockCoreListReviewsResult({
+        data: [
+          getMockCoreReviewListItem({
+            company_id: 'Acme Corp',
+            status: 'completed',
+            analysis: { sentiment: 'positive', category: 'delivery', confidence: 0.9, matched_keywords: [] },
+          }),
+        ],
+      })
+    );
     renderList();
     await waitFor(() => expect(screen.getByText('Acme Corp')).toBeInTheDocument());
     expect(screen.getByText('Concluído')).toBeInTheDocument();
@@ -53,11 +97,12 @@ describe('ReviewList', () => {
     );
   }, 15000);
 
-  it('filters the table by status using the pill controls', async () => {
-    vi.spyOn(api, 'listReviews').mockResolvedValue([
+  it('sends the selected status as a query param when a pill is clicked', async () => {
+    const reviews = [
       getMockCoreReviewListItem({ company_id: 'Acme', status: 'completed' }),
       getMockCoreReviewListItem({ company_id: 'Globex', status: 'failed' }),
-    ]);
+    ];
+    const spy = vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
     renderList();
     await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument());
     expect(screen.getByText('Globex')).toBeInTheDocument();
@@ -66,25 +111,32 @@ describe('ReviewList', () => {
 
     await waitFor(() => expect(screen.queryByText('Acme')).not.toBeInTheDocument());
     expect(screen.getByText('Globex')).toBeInTheDocument();
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'failed', page: 1 }));
   });
 
-  it('filters the table by company search', async () => {
-    vi.spyOn(api, 'listReviews').mockResolvedValue([
+  it('debounces the search input before sending it as a query param', async () => {
+    const reviews = [
       getMockCoreReviewListItem({ company_id: 'Acme Corp' }),
       getMockCoreReviewListItem({ company_id: 'Globex' }),
-    ]);
+    ];
+    const spy = vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
     renderList();
     await waitFor(() => expect(screen.getByText('Acme Corp')).toBeInTheDocument());
 
     fireEvent.change(screen.getByPlaceholderText('Buscar por empresa...'), { target: { value: 'globex' } });
 
-    await waitFor(() => expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument());
+    // Debounce delays the network call — search text updates immediately, but
+    // the API isn't called with it right away.
+    expect(spy).not.toHaveBeenLastCalledWith(expect.objectContaining({ search: 'globex' }));
+
+    await waitFor(() => expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument(), { timeout: 1000 });
     expect(screen.getByText('Globex')).toBeInTheDocument();
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'globex' }));
   });
 
-  it('paginates when there are more reviews than fit on one page', async () => {
+  it('paginates via the pagination control, requesting the next page from the API', async () => {
     const reviews = Array.from({ length: 12 }, (_, i) => getMockCoreReviewListItem({ id: String(i), company_id: `Empresa ${i}` }));
-    vi.spyOn(api, 'listReviews').mockResolvedValue(reviews);
+    const spy = vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
     renderList();
 
     await waitFor(() => expect(screen.getByText('Empresa 0')).toBeInTheDocument());
@@ -94,5 +146,6 @@ describe('ReviewList', () => {
     fireEvent.click(screen.getByRole('button', { name: '2' }));
 
     await waitFor(() => expect(screen.getByText('Empresa 11')).toBeInTheDocument());
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
   });
 });

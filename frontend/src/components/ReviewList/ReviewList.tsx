@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Alert,
   Badge,
@@ -13,25 +13,22 @@ import {
   Table,
   Text,
   TextInput,
-  Title
-} from '@mantine/core'
-import { DatePickerInput } from '@mantine/dates'
-import { useReviewsQuery } from '../../hooks'
-import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants'
-import { StatusBadge } from '../StatusBadge/StatusBadge'
-import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel'
-import {
-  useReviewFilters,
-  type StatusFilterValue
-} from './hooks/useReviewFilters'
+  Title,
+} from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { useReviewsQuery } from '../../hooks';
+import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
+import { StatusBadge } from '../StatusBadge/StatusBadge';
+import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
+import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'pending', label: 'Pendentes' },
   { value: 'processing', label: 'Processando' },
   { value: 'completed', label: 'Concluídos' },
-  { value: 'failed', label: 'Falhas' }
-]
+  { value: 'failed', label: 'Falhas' },
+];
 
 const RATING_OPTIONS = [
   { value: '', label: 'Todas as notas' },
@@ -39,23 +36,42 @@ const RATING_OPTIONS = [
   { value: '4', label: '4+ estrelas' },
   { value: '3', label: '3+ estrelas' },
   { value: '2', label: '2+ estrelas' },
-  { value: '1', label: '1+ estrela' }
-]
+  { value: '1', label: '1+ estrela' },
+];
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10;
 
 export function ReviewList() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { data, isLoading, isError, error } = useReviewsQuery()
-  const filters = useReviewFilters(data ?? [], PAGE_SIZE)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const filters = useReviewFilters();
 
-  if (isLoading) return <Loader />
-  if (isError) return <Alert color="red">{(error as Error).message}</Alert>
-  if (!data || data.length === 0)
-    return <Text c="dimmed">Nenhuma avaliação cadastrada ainda.</Text>
+  const { data, isLoading, isError, error } = useReviewsQuery({
+    page: filters.page,
+    pageSize: PAGE_SIZE,
+    status: filters.status === 'all' ? undefined : filters.status,
+    minRating: filters.minRating ?? undefined,
+    search: filters.debouncedSearch || undefined,
+    dateFrom: filters.dateFrom ?? undefined,
+    dateTo: filters.dateTo ?? undefined,
+  });
 
-  const rangeStart = (filters.page - 1) * PAGE_SIZE + 1
-  const rangeEnd = Math.min(filters.page * PAGE_SIZE, filters.filteredCount)
+  if (isLoading) return <Loader />;
+  if (isError) return <Alert color="red">{(error as Error).message}</Alert>;
+  if (!data) return null;
+
+  const hasActiveFilters =
+    filters.status !== 'all' ||
+    filters.minRating != null ||
+    filters.debouncedSearch !== '' ||
+    filters.dateFrom != null ||
+    filters.dateTo != null;
+
+  if (data.pagination.total === 0 && !hasActiveFilters) {
+    return <Text c="dimmed">Nenhuma avaliação cadastrada ainda.</Text>;
+  }
+
+  const rangeStart = (data.pagination.page - 1) * data.pagination.pageSize + 1;
+  const rangeEnd = Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.total);
 
   return (
     <Stack gap="lg">
@@ -66,19 +82,11 @@ export function ReviewList() {
         </Text>
       </Stack>
 
-      <Chip.Group
-        value={filters.status}
-        onChange={value => filters.setStatus(value as StatusFilterValue)}
-      >
+      <Chip.Group value={filters.status} onChange={(value) => filters.setStatus(value as StatusFilterValue)}>
         <Group gap="xs" wrap="wrap">
-          {STATUS_CHIPS.map(chip => (
-            <Chip
-              key={chip.value}
-              value={chip.value}
-              variant="filled"
-              color="primary"
-            >
-              {chip.label} ({filters.counts[chip.value]})
+          {STATUS_CHIPS.map((chip) => (
+            <Chip key={chip.value} value={chip.value} variant="filled" color="primary">
+              {chip.label} ({data.counts[chip.value]})
             </Chip>
           ))}
         </Group>
@@ -88,33 +96,35 @@ export function ReviewList() {
         <TextInput
           placeholder="Buscar por empresa..."
           value={filters.search}
-          onChange={event => filters.setSearch(event.currentTarget.value)}
+          onChange={(event) => filters.setSearch(event.currentTarget.value)}
           w={{ base: '100%', xs: 240 }}
         />
         <Select
           placeholder="Todas as notas"
           data={RATING_OPTIONS}
           value={filters.minRating != null ? String(filters.minRating) : ''}
-          onChange={value => filters.setMinRating(value ? Number(value) : null)}
+          onChange={(value) => filters.setMinRating(value ? Number(value) : null)}
           w={{ base: '100%', xs: 180 }}
           clearable
         />
         <DatePickerInput
-          type="range"
-          placeholder="Período"
-          value={filters.dateRange}
-          onChange={value =>
-            filters.setDateRange(value as [Date | null, Date | null])
-          }
-          w={{ base: '100%', xs: 260 }}
+          placeholder="Data inicial"
+          value={filters.dateFrom}
+          onChange={(value) => filters.setDateFrom(value as Date | null)}
+          w={{ base: '100%', xs: 150 }}
+          clearable
+        />
+        <DatePickerInput
+          placeholder="Data final"
+          value={filters.dateTo}
+          onChange={(value) => filters.setDateTo(value as Date | null)}
+          w={{ base: '100%', xs: 150 }}
           clearable
         />
       </Group>
 
-      {filters.filteredCount === 0 ? (
-        <Text c="dimmed">
-          Nenhuma avaliação encontrada para os filtros selecionados.
-        </Text>
+      {data.pagination.total === 0 ? (
+        <Text c="dimmed">Nenhuma avaliação encontrada para os filtros selecionados.</Text>
       ) : (
         <>
           <Table.ScrollContainer minWidth={640}>
@@ -130,20 +140,13 @@ export function ReviewList() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {filters.reviews.map(review => {
-                  const sentiment = review.analysis
-                    ? SENTIMENT_LABELS[review.analysis.sentiment]
-                    : undefined
+                {data.data.map((review) => {
+                  const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
                   const category = review.analysis
-                    ? (CATEGORY_LABELS[review.analysis.category] ??
-                      review.analysis.category)
-                    : undefined
+                    ? (CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category)
+                    : undefined;
                   return (
-                    <Table.Tr
-                      key={review.id}
-                      onClick={() => setSelectedId(review.id)}
-                      style={{ cursor: 'pointer' }}
-                    >
+                    <Table.Tr key={review.id} onClick={() => setSelectedId(review.id)} style={{ cursor: 'pointer' }}>
                       <Table.Td>{review.company_id}</Table.Td>
                       <Table.Td>{review.rating} ★</Table.Td>
                       <Table.Td>
@@ -151,9 +154,7 @@ export function ReviewList() {
                       </Table.Td>
                       <Table.Td>
                         {sentiment ? (
-                          <Badge color={sentiment.color}>
-                            {sentiment.label}
-                          </Badge>
+                          <Badge color={sentiment.color}>{sentiment.label}</Badge>
                         ) : (
                           <Text c="dimmed" size="sm">
                             —
@@ -167,45 +168,26 @@ export function ReviewList() {
                           </Text>
                         )}
                       </Table.Td>
-                      <Table.Td>
-                        {new Date(review.created_at).toLocaleDateString(
-                          'pt-BR'
-                        )}
-                      </Table.Td>
+                      <Table.Td>{new Date(review.created_at).toLocaleDateString('pt-BR')}</Table.Td>
                     </Table.Tr>
-                  )
+                  );
                 })}
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
 
-          <Flex
-            direction={{ base: 'column', xs: 'row' }}
-            justify={{ base: 'center', xs: 'space-between' }}
-            align="center"
-            gap="sm"
-          >
+          <Flex direction={{ base: 'column', xs: 'row' }} justify={{ base: 'center', xs: 'space-between' }} align="center" gap="sm">
             <Text size="sm" c="dimmed">
-              Mostrando {rangeStart}-{rangeEnd} de {filters.filteredCount}{' '}
-              avaliações
+              Mostrando {rangeStart}-{rangeEnd} de {data.pagination.total} avaliações
             </Text>
-            <Pagination
-              total={filters.totalPages}
-              value={filters.page}
-              onChange={filters.setPage}
-            />
+            <Pagination total={data.pagination.totalPages} value={data.pagination.page} onChange={filters.setPage} />
           </Flex>
         </>
       )}
 
-      <Modal
-        opened={selectedId != null}
-        onClose={() => setSelectedId(null)}
-        title="Detalhe da avaliação"
-        centered
-      >
+      <Modal opened={selectedId != null} onClose={() => setSelectedId(null)} title="Detalhe da avaliação" centered>
         {selectedId && <ReviewDetailPanel reviewId={selectedId} />}
       </Modal>
     </Stack>
-  )
+  );
 }

@@ -20,6 +20,7 @@ export function ReviewForm() {
   const form = useForm({
     initialValues: emptyFormValues(),
     validate: {
+      company_id: (value) => (value.trim().length === 0 ? 'Informe a empresa' : null),
       comment: (value) => (value.trim().length < 3 ? 'O comentário deve ter pelo menos 3 caracteres' : null),
     },
   });

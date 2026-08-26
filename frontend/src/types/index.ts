@@ -5,3 +5,7 @@ export * from './CoreReviewListItem';
 export * from './CoreReviewDetail';
 export * from './CoreCreateReviewInput';
 export * from './CoreCreateReviewResult';
+export * from './CorePagination';
+export * from './CoreReviewStatusCounts';
+export * from './CoreListReviewsParams';
+export * from './CoreListReviewsResult';
