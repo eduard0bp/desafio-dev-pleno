@@ -1,4 +1,5 @@
 export * from './CoreReviewStatus';
+export * from './CoreReviewSentiment';
 export * from './CoreReviewAnalysis';
 export * from './CoreReviewLastError';
 export * from './CoreReviewListItem';

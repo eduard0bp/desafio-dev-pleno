@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
-import type { CoreReviewStatus } from '../../../types';
+import type { CoreReviewStatus, CoreReviewSentiment } from '../../../types';
 
 export type StatusFilterValue = 'all' | CoreReviewStatus;
 
@@ -13,6 +13,7 @@ export function useReviewFilters() {
   const [minRating, setMinRatingValue] = useState<number | null>(null);
   const [dateFrom, setDateFromValue] = useState<Date | null>(null);
   const [dateTo, setDateToValue] = useState<Date | null>(null);
+  const [sentiment, setSentimentValue] = useState<CoreReviewSentiment | null>(null);
   const [page, setPage] = useState(1);
 
   function setSearch(value: string) {
@@ -40,13 +41,19 @@ export function useReviewFilters() {
     setPage(1);
   }
 
-  /** Resets search/rating/date — the fields collapsed into the mobile
-   * filters drawer — without touching the status chips. */
+  function setSentiment(value: CoreReviewSentiment | null) {
+    setSentimentValue(value);
+    setPage(1);
+  }
+
+  /** Resets search/rating/date/sentiment — the fields collapsed into the
+   * mobile filters drawer — without touching the status chips. */
   function clearFieldFilters() {
     setSearch('');
     setMinRating(null);
     setDateFrom(null);
     setDateTo(null);
+    setSentiment(null);
   }
 
   return {
@@ -61,6 +68,8 @@ export function useReviewFilters() {
     setDateFrom,
     dateTo,
     setDateTo,
+    sentiment,
+    setSentiment,
     page,
     setPage,
     clearFieldFilters,

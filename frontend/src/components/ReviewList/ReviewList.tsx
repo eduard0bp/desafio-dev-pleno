@@ -29,7 +29,7 @@ import { StatusBadge } from '../StatusBadge/StatusBadge';
 import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
 import { TableStateMessage } from '../TableStateMessage/TableStateMessage';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
-import type { CoreReviewStatusCounts } from '../../types';
+import type { CoreReviewStatusCounts, CoreReviewSentiment } from '../../types';
 import classes from './ReviewList.module.css';
 
 interface FieldFilterValues {
@@ -37,6 +37,7 @@ interface FieldFilterValues {
   minRating: number | null;
   dateFrom: Date | null;
   dateTo: Date | null;
+  sentiment: CoreReviewSentiment | null;
 }
 
 interface FieldFilterHandlers {
@@ -44,6 +45,7 @@ interface FieldFilterHandlers {
   setMinRating: (value: number | null) => void;
   setDateFrom: (value: Date | null) => void;
   setDateTo: (value: Date | null) => void;
+  setSentiment: (value: CoreReviewSentiment | null) => void;
 }
 
 // Desktop wires these fields straight to the real filters (applies as you
@@ -81,6 +83,14 @@ function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange:
         w={{ base: '100%', xs: 150 }}
         clearable
       />
+      <Select
+        placeholder="Todos os sentimentos"
+        data={SENTIMENT_OPTIONS}
+        value={value.sentiment}
+        onChange={(v) => onChange.setSentiment(v as CoreReviewSentiment | null)}
+        w={{ base: '100%', xs: 180 }}
+        clearable
+      />
     </>
   );
 }
@@ -112,6 +122,12 @@ const RATING_OPTIONS = [
   { value: '1', label: '1+ estrela' },
 ];
 
+const SENTIMENT_OPTIONS = [
+  { value: 'positive', label: 'Positivo' },
+  { value: 'neutral', label: 'Neutro' },
+  { value: 'negative', label: 'Negativo' },
+];
+
 const EMPTY_COUNTS: CoreReviewStatusCounts = { all: 0, pending: 0, processing: 0, completed: 0, failed: 0 };
 
 const PAGE_SIZE = 10;
@@ -131,6 +147,7 @@ export function ReviewList() {
     minRating: filters.minRating,
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
+    sentiment: filters.sentiment,
   });
 
   function openFilters() {
@@ -139,6 +156,7 @@ export function ReviewList() {
       minRating: filters.minRating,
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
+      sentiment: filters.sentiment,
     });
     openFiltersDisclosure();
   }
@@ -148,11 +166,12 @@ export function ReviewList() {
     filters.setMinRating(draftFilters.minRating);
     filters.setDateFrom(draftFilters.dateFrom);
     filters.setDateTo(draftFilters.dateTo);
+    filters.setSentiment(draftFilters.sentiment);
     closeFilters();
   }
 
   function clearDraftFilters() {
-    const empty: FieldFilterValues = { search: '', minRating: null, dateFrom: null, dateTo: null };
+    const empty: FieldFilterValues = { search: '', minRating: null, dateFrom: null, dateTo: null, sentiment: null };
     setDraftFilters(empty);
     filters.clearFieldFilters();
   }
@@ -165,6 +184,7 @@ export function ReviewList() {
     search: filters.debouncedSearch || undefined,
     dateFrom: filters.dateFrom ?? undefined,
     dateTo: filters.dateTo ?? undefined,
+    sentiment: filters.sentiment ?? undefined,
   });
 
   // Only the very first load (no data yet, of any kind) replaces the whole
@@ -184,13 +204,15 @@ export function ReviewList() {
     filters.minRating != null ||
     filters.debouncedSearch !== '' ||
     filters.dateFrom != null ||
-    filters.dateTo != null;
+    filters.dateTo != null ||
+    filters.sentiment != null;
 
   const activeFieldFilterCount = [
     filters.debouncedSearch !== '',
     filters.minRating != null,
     filters.dateFrom != null,
     filters.dateTo != null,
+    filters.sentiment != null,
   ].filter(Boolean).length;
 
   const emptyStateMessage = hasActiveFilters
@@ -247,6 +269,7 @@ export function ReviewList() {
               setMinRating: (value) => setDraftFilters((draft) => ({ ...draft, minRating: value })),
               setDateFrom: (value) => setDraftFilters((draft) => ({ ...draft, dateFrom: value })),
               setDateTo: (value) => setDraftFilters((draft) => ({ ...draft, dateTo: value })),
+              setSentiment: (value) => setDraftFilters((draft) => ({ ...draft, sentiment: value })),
             }}
           />
           <Group gap="sm" grow>

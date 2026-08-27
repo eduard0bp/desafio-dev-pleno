@@ -11,6 +11,7 @@ describe('useReviewFilters', () => {
     expect(result.current.minRating).toBeNull();
     expect(result.current.dateFrom).toBeNull();
     expect(result.current.dateTo).toBeNull();
+    expect(result.current.sentiment).toBeNull();
     expect(result.current.page).toBe(1);
   });
 
@@ -43,9 +44,13 @@ describe('useReviewFilters', () => {
     act(() => result.current.setPage(2));
     act(() => result.current.setDateTo(new Date('2026-01-31')));
     expect(result.current.page).toBe(1);
+
+    act(() => result.current.setPage(2));
+    act(() => result.current.setSentiment('negative'));
+    expect(result.current.page).toBe(1);
   });
 
-  it('clearFieldFilters resets search/rating/date but leaves status untouched', async () => {
+  it('clearFieldFilters resets search/rating/date/sentiment but leaves status untouched', async () => {
     const { result } = renderHook(() => useReviewFilters());
 
     act(() => {
@@ -54,6 +59,7 @@ describe('useReviewFilters', () => {
       result.current.setMinRating(4);
       result.current.setDateFrom(new Date('2026-01-01'));
       result.current.setDateTo(new Date('2026-01-31'));
+      result.current.setSentiment('negative');
     });
 
     act(() => result.current.clearFieldFilters());
@@ -62,6 +68,7 @@ describe('useReviewFilters', () => {
     expect(result.current.minRating).toBeNull();
     expect(result.current.dateFrom).toBeNull();
     expect(result.current.dateTo).toBeNull();
+    expect(result.current.sentiment).toBeNull();
     expect(result.current.status).toBe('failed');
     await waitFor(() => expect(result.current.debouncedSearch).toBe(''), { timeout: 1000 });
   });

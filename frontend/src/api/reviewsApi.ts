@@ -54,6 +54,7 @@ function buildListReviewsQuery(params: CoreListReviewsParams): string {
   if (params.search) query.set('search', params.search);
   if (params.dateFrom) query.set('dateFrom', params.dateFrom.toISOString());
   if (params.dateTo) query.set('dateTo', params.dateTo.toISOString());
+  if (params.sentiment) query.set('sentiment', params.sentiment);
   return query.toString();
 }
 

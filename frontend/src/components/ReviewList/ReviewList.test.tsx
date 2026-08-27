@@ -78,9 +78,10 @@ describe('ReviewList', () => {
     );
     renderList();
     await waitFor(() => expect(screen.getByText('Acme Corp')).toBeInTheDocument());
-    expect(screen.getByText('Concluído')).toBeInTheDocument();
-    expect(screen.getByText('Positivo')).toBeInTheDocument();
-    expect(screen.getByText('Entrega')).toBeInTheDocument();
+    const row = screen.getByRole('row', { name: /Acme Corp/ });
+    expect(within(row).getByText('Concluído')).toBeInTheDocument();
+    expect(within(row).getByText('Positivo')).toBeInTheDocument();
+    expect(within(row).getByText('Entrega')).toBeInTheDocument();
   });
 
   // TanStack Query retries failed queries by default (3 retries with backoff),
