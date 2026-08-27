@@ -20,9 +20,6 @@ test.describe('Notification bell', () => {
     const { externalId, companyId } = uniqueReviewIdentity('Bell Test');
 
     await reviewFormPage.goto();
-    // Same reasoning as the sentiment filter spec: strong negative keywords
-    // plus a low rating make a negative outcome very likely, assuming the
-    // review completes at all.
     await reviewFormPage.submit({
       externalId,
       companyId,

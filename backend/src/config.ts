@@ -1,16 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Every env var the API/worker process actually reads, validated once at
- * import time instead of scattered `process.env.X` reads (each with its
- * own ad-hoc fallback) across server.ts, worker.ts, lib/redis.ts and
- * services/analysisClient.ts. A missing/malformed value now fails loudly
- * at boot instead of at the first request that happens to touch it.
- *
- * DATABASE_URL isn't validated here — Prisma reads it directly from the
- * environment (see prisma/schema.prisma's `env("DATABASE_URL")`), so no
- * code in this project actually consumes it itself.
- */
 const envSchema = z.object({
   PORT: z.coerce.number('PORT deve ser um número').int().positive().default(3000),
   WORKER_PORT: z.coerce.number('WORKER_PORT deve ser um número').int().positive().default(3001),

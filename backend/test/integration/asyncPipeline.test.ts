@@ -5,15 +5,6 @@ import { prisma } from '../../src/lib/prisma';
 import { reviewQueue, enqueueReviewJob, type ReviewJobData } from '../../src/queue/reviewQueue';
 import { startWorker } from '../../src/worker';
 
-/**
- * Every other test either calls processReviewJob() directly with a mocked
- * analyzeReview (worker.test.ts) or only exercises enqueue/getJob
- * (queue.test.ts). Neither drives a job through the real BullMQ consumer
- * loop. This test starts an actual Worker against the real Redis queue and
- * lets it call the real (fake) analysis API via x-mock-scenario:"success",
- * to cover the full async pipeline at the backend level rather than relying
- * solely on the Playwright e2e test to do so.
- */
 async function waitForStatus(reviewId: string, status: string, timeoutMs = 10000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {

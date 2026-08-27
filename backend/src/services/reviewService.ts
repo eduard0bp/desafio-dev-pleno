@@ -65,8 +65,6 @@ function buildBaseWhere(filters: ListReviewsFilters): Prisma.ReviewWhereInput {
           },
         }
       : {}),
-    // analysis only exists once a review completes, so filtering by
-    // sentiment naturally excludes pending/processing/failed reviews.
     ...(filters.sentiment ? { analysis: { path: ['sentiment'], equals: filters.sentiment } } : {}),
     ...(filters.isRead != null ? { isRead: filters.isRead } : {}),
   };
@@ -114,8 +112,6 @@ export async function getReviewById(id: string): Promise<Review | null> {
   return prisma.review.findUnique({ where: { id } });
 }
 
-/** Resets a review so it can be reprocessed from scratch. Caller must have
- * already confirmed the review exists and is currently `failed`. */
 export async function retryReview(id: string): Promise<Review> {
   return prisma.review.update({
     where: { id },

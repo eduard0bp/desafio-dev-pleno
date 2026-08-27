@@ -4,7 +4,6 @@ import { useCreateReviewMutation } from '../../hooks';
 import type { CoreCreateReviewInput } from '../../types';
 
 const COMMENT_MAX_LENGTH = 2000;
-// Matches backend/src/validation.ts's external_id/company_id max(100).
 const SHORT_TEXT_MAX_LENGTH = 100;
 
 function generateExternalId() {

@@ -1,8 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-/** The review detail modal (SelectedReviewModal) — shared by row clicks,
- * the "Ver detalhes" eye button, and the notification bell, so it's its
- * own component object rather than living inside one page object. */
 export class ReviewDetailModal {
   readonly page: Page;
   readonly dialog: Locator;

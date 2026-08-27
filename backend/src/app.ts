@@ -15,8 +15,6 @@ export function createApp() {
     next();
   });
 
-  // Skips /health on purpose — Docker's healthcheck hits it every few
-  // seconds, and it carries no request_id worth correlating.
   app.use((req, res, next) => {
     if (req.path === '/health') return next();
     const start = Date.now();

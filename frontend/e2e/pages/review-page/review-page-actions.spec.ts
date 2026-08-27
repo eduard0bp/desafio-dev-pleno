@@ -15,8 +15,6 @@ test.describe('Row actions', () => {
     await reviewFormPage.submit({ externalId, companyId, comment });
     await page.getByRole('link', { name: 'Monitoramento' }).click();
 
-    // The row is clickable and opens the same modal the instant it exists,
-    // independent of whether it's still pending/processing or terminal.
     await reviewPage.search(companyId);
     await reviewPage.row(companyId).click();
 

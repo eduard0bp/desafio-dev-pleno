@@ -29,9 +29,6 @@ test.describe('Navigation', () => {
     test('the burger menu opens the nav drawer, and navigating closes it', async ({ page }) => {
       await page.goto('/admin/avaliacoes');
 
-      // The collapsed navbar is off-canvas via a CSS transform rather than
-      // display:none, so it still passes toBeVisible()'s checks — only a
-      // viewport-intersection check actually reflects it being off-screen.
       const navLink = page.getByRole('navigation').getByRole('link', { name: 'Enviar Avaliação' });
       await expect(navLink).not.toBeInViewport();
 

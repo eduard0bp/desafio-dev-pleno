@@ -137,12 +137,6 @@ export function startWorker(): Worker<ReviewJobData> {
   return worker;
 }
 
-/**
- * A tiny HTTP server exposing the same /health contract as the API
- * (backend-api), so Docker/an orchestrator can tell the worker apart from
- * "process alive but stopped consuming jobs" — otherwise nothing notices
- * that failure mode, since the worker has no request traffic of its own.
- */
 function startHealthServer() {
   const server = createServer((req, res) => {
     if (req.url !== '/health') {
@@ -170,9 +164,6 @@ if (process.env.NODE_ENV !== 'test') {
   const healthServer = startHealthServer();
   log('info', 'worker_started');
 
-  // Stops picking up new jobs and lets the in-flight one finish before
-  // exiting, instead of being killed mid-job when the container is
-  // stopped/redeployed.
   process.on('SIGTERM', async () => {
     log('info', 'worker_shutting_down', {});
     clearInterval(reconciliationInterval);

@@ -5,9 +5,6 @@ import { dayButtonName } from './review-page-helpers';
 export type StatusChipLabel = 'Todos' | 'Pendentes' | 'Processando' | 'Concluídos' | 'Falhas';
 export type SentimentLabel = 'Positivo' | 'Neutro' | 'Negativo';
 
-/** The review monitoring / listing page (/admin/avaliacoes): status chips,
- * field filters (desktop live-apply and mobile draft-and-apply), the
- * table, pagination, row actions, and the notification bell. */
 export class ReviewPage {
   readonly page: Page;
   readonly bell: NotificationBell;
@@ -36,11 +33,6 @@ export class ReviewPage {
     await expect(this.page).toHaveURL(/\/admin\/avaliacoes$/);
   }
 
-  // Mantine's Chip renders its radio input positioned off-screen (not just
-  // visually hidden), immediately followed by a sibling <label for="...">
-  // holding the visible pill — clicking the input directly leaves
-  // Playwright with no valid point to click, even with force. The <label>
-  // is the real clickable target.
   statusChip(label: StatusChipLabel): Locator {
     const input = this.page.getByRole('radio', { name: new RegExp(`^${label}`) });
     return input.locator('xpath=following-sibling::label[1]');
@@ -65,8 +57,6 @@ export class ReviewPage {
   paginationPage(page: number): Locator {
     return this.page.getByRole('button', { name: String(page), exact: true });
   }
-
-  // --- Desktop field filters (apply live, no confirmation step) ---
 
   async search(term: string): Promise<void> {
     await this.searchInput.fill(term);
@@ -95,8 +85,6 @@ export class ReviewPage {
   async clearFiltersDesktop(): Promise<void> {
     await this.desktopClearFiltersButton.click();
   }
-
-  // --- Mobile field filters (draft in a drawer, applied explicitly) ---
 
   async openMobileFilters(): Promise<void> {
     await this.mobileFiltersButton.click();

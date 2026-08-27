@@ -23,12 +23,6 @@ function renderList() {
   );
 }
 
-/**
- * Stands in for the real backend: applies the same status/search/pagination
- * semantics GET /reviews implements, over an in-memory list, so component
- * interactions (clicking a status pill, typing a search, changing page)
- * exercise a real request/response round-trip instead of local slicing.
- */
 function fakeListReviews(allReviews: CoreReviewListItem[]) {
   return async (params: CoreListReviewsParams): Promise<CoreListReviewsResult> => {
     const filtered = allReviews.filter((review) => {
@@ -103,11 +97,6 @@ describe('ReviewList', () => {
     await waitFor(() => expect(within(dialog).getByText('Acme Corp')).toBeInTheDocument());
   });
 
-  // TanStack Query retries failed queries by default (3 retries with backoff),
-  // so the error state can take several seconds to surface. Both the test's own
-  // timeout and the waitFor timeout are extended here rather than disabling
-  // retries in the component (which would reduce production resilience to
-  // transient network blips during polling).
   it('shows an error message when the API call fails', async () => {
     vi.spyOn(api, 'listReviews').mockRejectedValue(new Error('Falha ao carregar avaliações'));
     renderList();
@@ -145,8 +134,6 @@ describe('ReviewList', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Buscar por empresa...'), { target: { value: 'globex' } });
 
-    // Debounce delays the network call — search text updates immediately, but
-    // the API isn't called with it right away.
     expect(spy).not.toHaveBeenLastCalledWith(expect.objectContaining({ search: 'globex' }));
 
     await waitFor(() => expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument(), { timeout: 1000 });

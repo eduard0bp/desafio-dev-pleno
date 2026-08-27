@@ -30,10 +30,6 @@ describe('reviewService', () => {
   });
 
   it('lists reviews ordered by created_at desc', async () => {
-    // createdAt is stored with millisecond precision, and two sequential
-    // creates can land in the same millisecond (Postgres does not
-    // guarantee tie order), so set explicit, clearly-separated createdAt
-    // values directly rather than racing the wall clock.
     const idA = `test-${randomUUID()}`;
     const idB = `test-${randomUUID()}`;
     const { review: reviewA } = await createReview({ externalId: idA, companyId: 'c', rating: 1, comment: 'a' });
@@ -50,7 +46,6 @@ describe('reviewService', () => {
 
     expect(indexA).toBeGreaterThanOrEqual(0);
     expect(indexB).toBeGreaterThanOrEqual(0);
-    // idB has the later createdAt, so in descending order it must appear first (lower index).
     expect(indexB).toBeLessThan(indexA);
   });
 

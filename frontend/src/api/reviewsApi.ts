@@ -15,12 +15,6 @@ async function parseErrorMessage(response: Response, fallback: string): Promise<
   return body?.error?.message ?? fallback;
 }
 
-/**
- * Wraps fetch so both HTTP-level errors (response.ok === false) and
- * connection-level failures (the API is unreachable — fetch() itself
- * throws a raw "Failed to fetch"/"NetworkError" TypeError) surface the
- * same friendly, translated message instead of a browser-internal one.
- */
 async function requestJson<T>(url: string, options: RequestInit | undefined, fallbackMessage: string): Promise<T> {
   let response: Response;
   try {

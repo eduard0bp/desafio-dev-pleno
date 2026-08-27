@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { escapeRegExp } from './notification-bell-helpers';
 
-/** The floating notification bell — only rendered on ReviewPage. */
 export class NotificationBell {
   readonly page: Page;
   readonly trigger: Locator;
@@ -28,8 +27,6 @@ export class NotificationBell {
     await expect(this.item(companyId)).not.toBeVisible();
   }
 
-  /** Clicking an item opens the detail modal and marks it read — the
-   * dropdown closes as part of that (see NotificationBell.tsx). */
   async selectItem(companyId: string): Promise<void> {
     await this.item(companyId).click();
   }

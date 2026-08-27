@@ -8,11 +8,6 @@ interface SelectedReviewContextValue {
 
 const SelectedReviewContext = createContext<SelectedReviewContextValue | null>(null);
 
-/**
- * Shared across the app so both the review table and the notification bell
- * (rendered outside the table, in the header/sidebar) can open the same
- * review-detail modal.
- */
 export function SelectedReviewProvider({ children }: { children: ReactNode }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 

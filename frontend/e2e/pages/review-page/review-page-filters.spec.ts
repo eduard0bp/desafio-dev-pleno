@@ -50,10 +50,6 @@ test.describe('Field filters (desktop)', () => {
 
     const row = reviewPage.row(companyId);
     await expect(row).toBeVisible();
-    // The pipeline's outcome (which terminal status this lands on) is not
-    // under this test's control — see review-form-page-submission.spec.ts —
-    // so the assertions below adapt to whichever one actually happens
-    // instead of assuming one.
     await expect(row.getByText('Concluído').or(row.getByText('Falhou'))).toBeVisible({ timeout: 30000 });
     const isCompleted = await row.getByText('Concluído').isVisible();
     const matchingChip = isCompleted ? 'Concluídos' : 'Falhas';
@@ -75,10 +71,6 @@ test.describe('Field filters (desktop)', () => {
     const { externalId, companyId } = uniqueReviewIdentity('Sentiment Test');
 
     await reviewFormPage.goto();
-    // Strong keywords in both directions plus a low rating push the mock
-    // analyzer's score well past its negative threshold (see
-    // mock-analysis-api/src/analyzer.ts) — assuming the review completes at
-    // all, its sentiment should reliably be negative.
     await reviewFormPage.submit({
       externalId,
       companyId,
@@ -111,11 +103,6 @@ test.describe('Field filters (desktop)', () => {
     await reviewPage.search(companyId);
     await expect(reviewPage.row(companyId)).toBeVisible();
 
-    // No review can have been created in the future, so this is a
-    // deterministic way to prove the filter actually excludes something —
-    // without needing a fixture dated in the past (see the comment on
-    // review-page-helpers.ts for why the picker stays within the current
-    // month either way).
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await reviewPage.pickDateFrom(tomorrow);
     await expect(reviewPage.row(companyId)).not.toBeVisible();
@@ -150,16 +137,12 @@ test.describe('Field filters (mobile drawer)', () => {
 
     await reviewFormPage.goto();
     await reviewFormPage.submit({ externalId, companyId, comment: 'Ok.' });
-    // The sidebar nav is off-canvas on mobile (behind the burger menu), so
-    // navigating there directly avoids depending on it for this test.
     await reviewPage.goto();
     await expect(reviewPage.row(companyId)).toBeVisible();
 
     await reviewPage.openMobileFilters();
     await reviewPage.searchInMobileDrawer(`${companyId} nao existe`);
 
-    // Still on the drawer, over the unfiltered table underneath — the row
-    // must still be present since the draft hasn't been applied yet.
     await expect(reviewPage.row(companyId)).toBeVisible();
 
     await reviewPage.applyMobileFilters();

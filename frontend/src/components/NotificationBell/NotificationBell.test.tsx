@@ -67,8 +67,6 @@ describe('NotificationBell', () => {
           pagination: { page: 1, pageSize: 5, total: 3, totalPages: 1 },
         })
       )
-      // Refetched after the review is marked as read — the backend now
-      // excludes it from the unread/negative result.
       .mockResolvedValue(
         getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 5, total: 2, totalPages: 1 } })
       );

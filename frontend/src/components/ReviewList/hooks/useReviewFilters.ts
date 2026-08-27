@@ -46,8 +46,6 @@ export function useReviewFilters() {
     setPage(1);
   }
 
-  /** Resets search/rating/date/sentiment — the fields collapsed into the
-   * mobile filters drawer — without touching the status chips. */
   function clearFieldFilters() {
     setSearch('');
     setMinRating(null);
