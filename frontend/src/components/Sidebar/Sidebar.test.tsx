@@ -15,9 +15,9 @@ function renderSidebar(initialPath = '/') {
 }
 
 describe('Sidebar', () => {
-  it('shows the brand name', () => {
+  it('shows the brand logo', () => {
     renderSidebar();
-    expect(screen.getByText('Falaê!')).toBeInTheDocument();
+    expect(screen.getByAltText('Falaê!')).toBeInTheDocument();
   });
 
   it('shows both section headings and their navigation items', () => {

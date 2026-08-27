@@ -1,8 +1,9 @@
-import { AppShell, Burger, Group, Title } from '@mantine/core';
+import { AppShell, Burger, Group, Image } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Navigate, Route, Routes } from 'react-router';
 import { Sidebar } from './components';
 import { AvaliacoesPage, NovaAvaliacaoPage } from './pages';
+import falaeLogo from './assets/falae-logo-full.png';
 
 export default function App() {
   const [opened, { toggle, close }] = useDisclosure();
@@ -13,12 +14,10 @@ export default function App() {
       navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="lg"
     >
-      <AppShell.Header hiddenFrom="sm">
+      <AppShell.Header hiddenFrom="sm" bg="primary.8" style={{ border: 'none' }}>
         <Group h="100%" px="md" gap="sm">
-          <Burger opened={opened} onClick={toggle} size="sm" aria-label="Abrir menu" />
-          <Title order={4} c="primary.7">
-            Falaê!
-          </Title>
+          <Burger opened={opened} onClick={toggle} size="sm" color="white" aria-label="Abrir menu" />
+          <Image src={falaeLogo} alt="Falaê!" w={120} fit="contain" />
         </Group>
       </AppShell.Header>
 
