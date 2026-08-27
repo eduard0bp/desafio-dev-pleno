@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 
-vi.mock('../../src/services/healthService', () => ({
+vi.mock('./health', () => ({
   checkHealth: vi.fn(),
 }));
 
-import { checkHealth } from '../../src/services/healthService';
-import { createApp } from '../../src/app';
+import { checkHealth } from './health';
+import { createApp } from '../app';
 
 const mockedCheckHealth = vi.mocked(checkHealth);
 

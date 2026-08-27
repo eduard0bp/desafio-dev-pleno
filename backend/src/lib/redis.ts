@@ -1,5 +1,6 @@
 import IORedis from 'ioredis';
+import { config } from '../config';
 
-export const connection = new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+export const connection = new IORedis(config.REDIS_URL, {
   maxRetriesPerRequest: null,
 });

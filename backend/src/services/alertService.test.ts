@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { alertNegativeReview } from '../../src/services/alertService';
+import { alertNegativeReview } from './alertService';
 
 describe('alertNegativeReview', () => {
   afterEach(() => {

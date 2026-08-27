@@ -1,18 +1,22 @@
 import 'dotenv/config';
+import { createServer } from 'node:http';
 import { Worker, UnrecoverableError, type Job } from 'bullmq';
 import { connection } from './lib/redis';
 import { REVIEW_QUEUE_NAME, type ReviewJobData } from './queue/reviewQueue';
 import { prisma } from './lib/prisma';
 import { analyzeReview, RetryableAnalysisError, NonRetryableAnalysisError } from './services/analysisClient';
 import { computeBackoffDelayMs } from './lib/retry';
-import { startReconciliationLoop } from './services/reconciliationService';
+import { startReconciliationLoop } from './jobs/reconciliationService';
 import { alertNegativeReview } from './services/alertService';
+import { checkHealth } from './lib/health';
+import { config } from './config';
 import { log } from './lib/logger';
 
 type JobLike = { data: ReviewJobData; attemptsMade: number };
 
 export async function processReviewJob(job: JobLike): Promise<void> {
   const review = await prisma.review.findUniqueOrThrow({ where: { id: job.data.reviewId } });
+  const requestId = job.data.requestId;
 
   await prisma.review.update({
     where: { id: review.id },
@@ -23,6 +27,7 @@ export async function processReviewJob(job: JobLike): Promise<void> {
     reviewId: review.id,
     externalId: review.externalId,
     attempt: review.attempts + 1,
+    requestId,
   });
 
   try {
@@ -44,6 +49,7 @@ export async function processReviewJob(job: JobLike): Promise<void> {
       externalId: review.externalId,
       sentiment: result.analysis.sentiment,
       category: result.analysis.category,
+      requestId,
     });
 
     if (result.analysis.sentiment === 'negative') {
@@ -68,6 +74,7 @@ export async function processReviewJob(job: JobLike): Promise<void> {
         externalId: review.externalId,
         code: err.code,
         message: err.message,
+        requestId,
       });
       throw new UnrecoverableError(err.message);
     }
@@ -81,6 +88,7 @@ export async function processReviewJob(job: JobLike): Promise<void> {
         reviewId: review.id,
         externalId: review.externalId,
         message: err.message,
+        requestId,
       });
     }
 
@@ -114,6 +122,7 @@ export function startWorker(): Worker<ReviewJobData> {
             reviewId: job.data.reviewId,
             attemptsMade: job.attemptsMade,
             message: err.message,
+            requestId: job.data.requestId,
           })
         )
         .catch((updateErr) =>
@@ -128,8 +137,47 @@ export function startWorker(): Worker<ReviewJobData> {
   return worker;
 }
 
+/**
+ * A tiny HTTP server exposing the same /health contract as the API
+ * (backend-api), so Docker/an orchestrator can tell the worker apart from
+ * "process alive but stopped consuming jobs" — otherwise nothing notices
+ * that failure mode, since the worker has no request traffic of its own.
+ */
+function startHealthServer() {
+  const server = createServer((req, res) => {
+    if (req.url !== '/health') {
+      res.writeHead(404);
+      return res.end();
+    }
+
+    checkHealth().then(({ postgres, redis }) => {
+      const healthy = postgres && redis;
+      res.writeHead(healthy ? 200 : 503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: healthy ? 'ok' : 'degraded', postgres, redis }));
+    });
+  });
+
+  server.listen(config.WORKER_PORT, () => {
+    log('info', 'worker_health_server_started', { port: config.WORKER_PORT });
+  });
+
+  return server;
+}
+
 if (process.env.NODE_ENV !== 'test') {
-  startWorker();
-  startReconciliationLoop();
+  const worker = startWorker();
+  const reconciliationInterval = startReconciliationLoop();
+  const healthServer = startHealthServer();
   log('info', 'worker_started');
+
+  // Stops picking up new jobs and lets the in-flight one finish before
+  // exiting, instead of being killed mid-job when the container is
+  // stopped/redeployed.
+  process.on('SIGTERM', async () => {
+    log('info', 'worker_shutting_down', {});
+    clearInterval(reconciliationInterval);
+    healthServer.close();
+    await worker.close();
+    process.exit(0);
+  });
 }

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { ReviewStatus } from '@prisma/client';
 import { prisma } from '../../src/lib/prisma';
 import { reviewQueue, enqueueReviewJob } from '../../src/queue/reviewQueue';
-import { reconcileStuckReviews } from '../../src/services/reconciliationService';
+import { reconcileStuckReviews } from '../../src/jobs/reconciliationService';
 
 const THRESHOLD_MS = 5 * 60 * 1000;
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createReviewSchema, listReviewsQuerySchema } from '../../src/validation';
+import { createReviewSchema, listReviewsQuerySchema } from './validation';
 
 describe('createReviewSchema', () => {
   it('accepts a valid payload', () => {

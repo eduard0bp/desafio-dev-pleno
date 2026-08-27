@@ -1,5 +1,5 @@
-import { prisma } from '../lib/prisma';
-import { connection } from '../lib/redis';
+import { prisma } from './prisma';
+import { connection } from './redis';
 
 export interface HealthCheckResult {
   postgres: boolean;

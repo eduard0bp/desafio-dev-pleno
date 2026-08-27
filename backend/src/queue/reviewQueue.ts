@@ -6,6 +6,10 @@ export const REVIEW_QUEUE_NAME = 'review-processing';
 export interface ReviewJobData {
   reviewId: string;
   mockScenario?: string;
+  // The HTTP request that triggered this job (the original POST /reviews or
+  // POST /reviews/:id/retry) — carried through so the worker's logs can be
+  // correlated with the request that caused them, not just with the review.
+  requestId?: string;
 }
 
 export const reviewQueue = new Queue<ReviewJobData>(REVIEW_QUEUE_NAME, { connection });

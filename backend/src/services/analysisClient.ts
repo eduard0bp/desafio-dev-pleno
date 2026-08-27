@@ -1,4 +1,5 @@
 import { shouldRetry, type AnalyzeErrorBody } from '../lib/retry';
+import { config } from '../config';
 
 const REQUEST_TIMEOUT_MS = 6000;
 
@@ -42,7 +43,7 @@ export interface AnalyzeReviewInput {
 }
 
 export async function analyzeReview(input: AnalyzeReviewInput): Promise<AnalyzeSuccess> {
-  const baseUrl = process.env.MOCK_ANALYSIS_API_URL ?? 'http://localhost:4000';
+  const baseUrl = config.MOCK_ANALYSIS_API_URL;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 

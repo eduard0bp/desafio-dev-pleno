@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isRetryableStatus, shouldRetry, computeBackoffDelayMs } from '../../src/lib/retry';
+import { isRetryableStatus, shouldRetry, computeBackoffDelayMs } from './retry';
 
 describe('isRetryableStatus', () => {
   it('429 and 503 are retryable', () => {

@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { randomUUID } from 'node:crypto';
 import { reviewsRouter } from './routes/reviews';
-import { checkHealth } from './services/healthService';
+import { checkHealth } from './lib/health';
+import { HttpError } from './errors';
 import { log } from './lib/logger';
 
 export function createApp() {
@@ -58,6 +59,16 @@ export function createApp() {
     if (isBodyParseError) {
       return res.status(400).json({
         error: { code: 'VALIDATION_ERROR', message: 'JSON inválido no corpo da requisição', retryable: false },
+        request_id: requestId,
+      });
+    }
+
+    if (err instanceof HttpError) {
+      if (err.status >= 500) {
+        log('error', 'unhandled_error', { request_id: requestId, message: err.message, stack: err.stack });
+      }
+      return res.status(err.status).json({
+        error: { code: err.code, message: err.message, retryable: err.retryable, details: err.details },
         request_id: requestId,
       });
     }

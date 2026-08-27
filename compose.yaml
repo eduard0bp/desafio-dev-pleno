@@ -100,6 +100,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-falae}:${POSTGRES_PASSWORD:-falae}@postgres:5432/${POSTGRES_DB:-falae}?schema=public
       REDIS_URL: redis://redis:6379
       MOCK_ANALYSIS_API_URL: http://mock-analysis-api:4000
+      WORKER_PORT: 3001
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,6 +110,16 @@ services:
         condition: service_healthy
       backend-api:
         condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
 
   frontend:
     build:

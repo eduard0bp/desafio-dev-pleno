@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import request from 'supertest';
 
-vi.mock('../../src/services/healthService', () => ({
+vi.mock('./lib/health', () => ({
   checkHealth: vi.fn().mockResolvedValue({ postgres: true, redis: true }),
 }));
 
-import { createApp } from '../../src/app';
+import { createApp } from './app';
 
 function waitForLogs() {
   return new Promise((resolve) => setImmediate(resolve));
