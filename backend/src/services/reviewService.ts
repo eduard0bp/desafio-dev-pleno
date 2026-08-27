@@ -37,6 +37,7 @@ export interface ListReviewsFilters {
   search?: string;
   dateFrom?: Date;
   dateTo?: Date;
+  sentiment?: 'positive' | 'neutral' | 'negative';
 }
 
 export interface ListReviewsResult {
@@ -63,6 +64,9 @@ function buildBaseWhere(filters: ListReviewsFilters): Prisma.ReviewWhereInput {
           },
         }
       : {}),
+    // analysis only exists once a review completes, so filtering by
+    // sentiment naturally excludes pending/processing/failed reviews.
+    ...(filters.sentiment ? { analysis: { path: ['sentiment'], equals: filters.sentiment } } : {}),
   };
 }
 

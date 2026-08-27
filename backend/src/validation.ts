@@ -43,6 +43,7 @@ export const listReviewsQuerySchema = z.object({
   search: z.string().trim().min(1, 'A busca não pode ser vazia').optional(),
   dateFrom: z.coerce.date('Data inicial inválida').optional(),
   dateTo: z.coerce.date('Data final inválida').optional(),
+  sentiment: z.enum(['positive', 'neutral', 'negative'], 'Sentimento inválido').optional(),
 });
 
 export type ListReviewsQuery = z.infer<typeof listReviewsQuerySchema>;

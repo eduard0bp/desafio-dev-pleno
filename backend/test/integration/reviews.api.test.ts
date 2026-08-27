@@ -101,6 +101,35 @@ describe('Reviews API', () => {
     expect(response.body.data[0].external_id).toBe(`test-${marker}-high`);
   });
 
+  it('GET /reviews filters by sentiment via query param', async () => {
+    const marker = randomUUID();
+    const negative = await request(app).post('/reviews').send({
+      external_id: `test-${marker}-neg`, company_id: `SentimentCo-${marker}`, rating: 1, comment: 'ruim',
+    });
+    const positive = await request(app).post('/reviews').send({
+      external_id: `test-${marker}-pos`, company_id: `SentimentCo-${marker}`, rating: 5, comment: 'bom',
+    });
+    await prisma.review.update({
+      where: { id: negative.body.id },
+      data: { status: 'completed', analysis: { sentiment: 'negative', category: 'general', confidence: 0.9, matched_keywords: [] } },
+    });
+    await prisma.review.update({
+      where: { id: positive.body.id },
+      data: { status: 'completed', analysis: { sentiment: 'positive', category: 'general', confidence: 0.9, matched_keywords: [] } },
+    });
+
+    const response = await request(app).get('/reviews').query({ search: `sentimentco-${marker}`, sentiment: 'negative' });
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].external_id).toBe(`test-${marker}-neg`);
+  });
+
+  it('GET /reviews with an invalid sentiment query param returns 400', async () => {
+    const response = await request(app).get('/reviews').query({ sentiment: 'angry' });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('GET /reviews paginates via page/pageSize query params', async () => {
     const marker = randomUUID();
     for (let i = 0; i < 3; i += 1) {
