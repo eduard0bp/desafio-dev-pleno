@@ -170,7 +170,7 @@ export function ReviewList() {
       <Button
         hiddenFrom="sm"
         variant="light"
-        color="primary"
+        color="tertiary"
         leftSection={<IconFilter size={16} />}
         onClick={openFilters}
       >
@@ -181,9 +181,17 @@ export function ReviewList() {
         <FilterFields filters={filters} />
       </Group>
 
-      <Drawer opened={filtersOpened} onClose={closeFilters} position="top" title="Filtros" hiddenFrom="sm">
+      <Drawer opened={filtersOpened} onClose={closeFilters} position="top" size="auto" title="Filtros" hiddenFrom="sm">
         <Stack gap="sm">
           <FilterFields filters={filters} />
+          <Group gap="sm" grow>
+            <Button variant="default" onClick={filters.clearFieldFilters}>
+              Limpar filtros
+            </Button>
+            <Button color="tertiary" onClick={closeFilters}>
+              Aplicar filtros
+            </Button>
+          </Group>
         </Stack>
       </Drawer>
 

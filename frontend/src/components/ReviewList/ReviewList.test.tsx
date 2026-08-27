@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReviewList } from './ReviewList';
@@ -181,5 +181,24 @@ describe('ReviewList', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Filtros (1)' }));
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeInTheDocument());
+  });
+
+  it('clears field filters via the drawer\'s "Limpar filtros" button, and "Aplicar filtros" closes it', async () => {
+    vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
+    renderList();
+    await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por empresa...'), { target: { value: 'acme' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filtros (1)' })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros (1)' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Filtros' });
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Limpar filtros' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filtros' })).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Filtros \(/ })).not.toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar filtros' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

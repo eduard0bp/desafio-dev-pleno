@@ -44,4 +44,25 @@ describe('useReviewFilters', () => {
     act(() => result.current.setDateTo(new Date('2026-01-31')));
     expect(result.current.page).toBe(1);
   });
+
+  it('clearFieldFilters resets search/rating/date but leaves status untouched', async () => {
+    const { result } = renderHook(() => useReviewFilters());
+
+    act(() => {
+      result.current.setSearch('acme');
+      result.current.setStatus('failed');
+      result.current.setMinRating(4);
+      result.current.setDateFrom(new Date('2026-01-01'));
+      result.current.setDateTo(new Date('2026-01-31'));
+    });
+
+    act(() => result.current.clearFieldFilters());
+
+    expect(result.current.search).toBe('');
+    expect(result.current.minRating).toBeNull();
+    expect(result.current.dateFrom).toBeNull();
+    expect(result.current.dateTo).toBeNull();
+    expect(result.current.status).toBe('failed');
+    await waitFor(() => expect(result.current.debouncedSearch).toBe(''), { timeout: 1000 });
+  });
 });

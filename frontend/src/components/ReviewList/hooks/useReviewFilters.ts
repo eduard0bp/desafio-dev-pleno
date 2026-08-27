@@ -40,6 +40,15 @@ export function useReviewFilters() {
     setPage(1);
   }
 
+  /** Resets search/rating/date — the fields collapsed into the mobile
+   * filters drawer — without touching the status chips. */
+  function clearFieldFilters() {
+    setSearch('');
+    setMinRating(null);
+    setDateFrom(null);
+    setDateTo(null);
+  }
+
   return {
     search,
     setSearch,
@@ -54,5 +63,6 @@ export function useReviewFilters() {
     setDateTo,
     page,
     setPage,
+    clearFieldFilters,
   };
 }
