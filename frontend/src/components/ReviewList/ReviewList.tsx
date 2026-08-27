@@ -111,7 +111,13 @@ function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange:
   );
 }
 
-const GRID_TEMPLATE_COLUMNS = '2fr 1.3fr 1fr 1fr 1fr 1fr 1fr';
+// Only Empresa (company name + comment) truncates — every other column gets
+// a fixed pixel width wide enough for its longest possible label (badges,
+// dates, the star rating), so their text never needs cutting. Empresa gets
+// the remaining flexible space via minmax(…, 1fr); on narrow viewports the
+// table's horizontal scroll (see the wrapping Box below) kicks in instead
+// of squeezing any column below its fixed width.
+const GRID_TEMPLATE_COLUMNS = 'minmax(160px, 1fr) 110px 120px 100px 110px 90px 60px';
 const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data', 'Ações'];
 // Badge/StatusBadge are inline-level elements — wrapped in a plain block Box,
 // their surrounding line-height leaves phantom space that shifts them a few
@@ -305,7 +311,7 @@ export function ReviewList() {
       </Drawer>
 
       <Box style={{ overflowX: 'auto' }}>
-        <Box role="table" miw={640} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)' }}>
+        <Box role="table" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)' }}>
           <Box role="rowgroup">
             <Box
               role="row"
@@ -313,7 +319,7 @@ export function ReviewList() {
               style={{ display: 'grid', gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gap: 'var(--mantine-spacing-sm)' }}
             >
               {COLUMN_LABELS.map((label) => (
-                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed" miw={0} truncate="end">
+                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed">
                   {label}
                 </Text>
               ))}
@@ -389,9 +395,7 @@ export function ReviewList() {
                     </Box>
                     <Box role="cell" style={CELL_FLEX_STYLE}>
                       {category ? (
-                        <Text size="sm" truncate="end">
-                          {category}
-                        </Text>
+                        <Text size="sm">{category}</Text>
                       ) : (
                         <Text c="dimmed" size="sm">
                           —
