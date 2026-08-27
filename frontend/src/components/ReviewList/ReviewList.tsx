@@ -141,23 +141,36 @@ const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center', minWidth: 0 } a
 // table instead of scrolling away with the rest of the row. Plain opaque
 // background, no border/shadow: a border here drew its own rounded box
 // around whatever sat inside the cell, nesting visibly with the eye
-// button's own `variant="default"` outline, and a translucent box-shadow
-// let the scrolled-under Status badge's color bleed through at the edge.
-// Neither is needed — the opaque background plus the row's own rounded
-// corners already reads as "docked to the card" on their own, the same
-// way the column already looks once scrolled all the way to the end.
+// button's own `variant="default"` outline.
+//
+// The grid's own column `gap` is a gutter that belongs to no cell, so a
+// cell's background only ever paints its own track — it never covers the
+// gap immediately to its left. For every other (non-sticky) column that's
+// invisible, since the whole row scrolls together and the same page
+// background always shows through that gap. The pinned column is the one
+// exception: once it's stuck away from its natural position, that
+// transparent gutter ends up hovering over whatever the row scrolled to
+// underneath it (e.g. the green Status badge), showing through as a thin
+// colored sliver at the column's left edge. Negative margin + matching
+// padding grows the cell's own painted box to also cover that gutter,
+// without moving its centered content.
+const STICKY_GAP_COVER = {
+  marginLeft: 'calc(-1 * var(--mantine-spacing-sm))',
+  paddingLeft: 'var(--mantine-spacing-sm)',
+} as const;
 const STICKY_ACTIONS_HEADER_STYLE = {
   position: 'sticky',
   right: 0,
   backgroundColor: 'var(--mantine-color-body)',
+  ...STICKY_GAP_COVER,
 } as const;
-// Each row's Ações cell needs more than a sticky background: the grid's
-// alignItems: center (see the row's own style below) only gives the cell
-// its content's height, not the full row height, so a plain background
-// leaves a gap above/below through which the scrolled-under Status badge
-// shows — alignSelf: stretch fixes that. The border-radius has no border
-// to round, but still clips the background color into the card's own
-// corner radius on this side.
+// Each row's Ações cell also needs more than a sticky background: the
+// grid's alignItems: center (see the row's own style below) only gives
+// the cell its content's height, not the full row height, so a plain
+// background leaves a gap above/below through which the scrolled-under
+// Status badge shows — alignSelf: stretch fixes that. The border-radius
+// has no border to round, but still clips the background color into the
+// card's own corner radius on this side.
 const STICKY_ACTIONS_ROW_STYLE = {
   ...CELL_FLEX_STYLE,
   position: 'sticky',
@@ -165,6 +178,7 @@ const STICKY_ACTIONS_ROW_STYLE = {
   alignSelf: 'stretch',
   justifyContent: 'center',
   backgroundColor: 'var(--mantine-color-body)',
+  ...STICKY_GAP_COVER,
   borderTopRightRadius: 'var(--mantine-radius-md)',
   borderBottomRightRadius: 'var(--mantine-radius-md)',
 } as const;
