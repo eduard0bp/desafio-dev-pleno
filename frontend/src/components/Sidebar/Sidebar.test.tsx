@@ -1,15 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { Sidebar } from './Sidebar';
+import { getMockCoreListReviewsResult } from '../../testUtils';
+import * as api from '../../api';
 
 function renderSidebar(initialPath = '/') {
+  vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
+  const queryClient = new QueryClient();
   render(
     <MantineProvider>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Sidebar />
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <Sidebar />
+        </MemoryRouter>
+      </QueryClientProvider>
     </MantineProvider>
   );
 }

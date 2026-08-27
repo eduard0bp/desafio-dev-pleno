@@ -1,6 +1,7 @@
-import { Box, Image, NavLink, Stack, Text } from '@mantine/core';
+import { Group, Image, NavLink, Stack, Text } from '@mantine/core';
 import { Link, useLocation } from 'react-router';
 import falaeLogo from '../../assets/falae-logo-full.png';
+import { NotificationBell } from '../NotificationBell/NotificationBell';
 import classes from './Sidebar.module.css';
 
 interface NavSection {
@@ -24,9 +25,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <Stack h="100%" p="md" gap="lg" c="white">
-      <Box visibleFrom="sm">
+      <Group visibleFrom="sm" justify="space-between" wrap="nowrap">
         <Image src={falaeLogo} alt="Falaê!" w={170} fit="contain" />
-      </Box>
+        <NotificationBell />
+      </Group>
       {NAV_SECTIONS.map((section) => (
         <Stack key={section.heading} gap={4}>
           <Text size="xs" fw={700} c="primary.2" tt="uppercase">

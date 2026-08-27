@@ -1,7 +1,7 @@
 import { AppShell, Burger, Group, Image } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Navigate, Route, Routes } from 'react-router';
-import { Sidebar } from './components';
+import { NotificationBell, Sidebar } from './components';
 import { AvaliacoesPage, NovaAvaliacaoPage } from './pages';
 import falaeLogo from './assets/falae-logo-full.png';
 
@@ -15,9 +15,12 @@ export default function App() {
       padding="lg"
     >
       <AppShell.Header hiddenFrom="sm" bg="primary.8" style={{ border: 'none' }}>
-        <Group h="100%" px="md" gap="sm">
-          <Burger opened={opened} onClick={toggle} size="sm" color="white" aria-label="Abrir menu" />
-          <Image src={falaeLogo} alt="Falaê!" w={120} fit="contain" />
+        <Group h="100%" px="md" gap="sm" justify="space-between">
+          <Group gap="sm">
+            <Burger opened={opened} onClick={toggle} size="sm" color="white" aria-label="Abrir menu" />
+            <Image src={falaeLogo} alt="Falaê!" w={120} fit="contain" />
+          </Group>
+          <NotificationBell />
         </Group>
       </AppShell.Header>
 
