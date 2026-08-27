@@ -22,7 +22,7 @@ export default function App() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar>
+      <AppShell.Navbar bg="primary.8" style={{ border: 'none' }}>
         <Sidebar onNavigate={close} />
       </AppShell.Navbar>
 
