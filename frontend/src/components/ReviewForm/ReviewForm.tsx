@@ -4,6 +4,8 @@ import { useCreateReviewMutation } from '../../hooks';
 import type { CoreCreateReviewInput } from '../../types';
 
 const COMMENT_MAX_LENGTH = 2000;
+// Matches backend/src/validation.ts's external_id/company_id max(100).
+const SHORT_TEXT_MAX_LENGTH = 100;
 
 function generateExternalId() {
   return `review-${crypto.randomUUID()}`;
@@ -22,7 +24,11 @@ export function ReviewForm() {
   const form = useForm({
     initialValues: emptyFormValues(),
     validate: {
-      company_id: (value) => (value.trim().length === 0 ? 'Informe a empresa' : null),
+      company_id: (value) => {
+        if (value.trim().length === 0) return 'Informe a empresa';
+        if (value.length > SHORT_TEXT_MAX_LENGTH) return `O nome da empresa deve ter no máximo ${SHORT_TEXT_MAX_LENGTH} caracteres`;
+        return null;
+      },
       comment: (value) => {
         if (value.trim().length < 3) return 'O comentário deve ter pelo menos 3 caracteres';
         if (value.length > COMMENT_MAX_LENGTH) return `O comentário deve ter no máximo ${COMMENT_MAX_LENGTH} caracteres`;
@@ -43,10 +49,11 @@ export function ReviewForm() {
       </Stack>
       <form onSubmit={form.onSubmit((values) => mutation.mutate(values))}>
         <Stack>
-          <TextInput label="ID do pedido" {...form.getInputProps('external_id')} />
+          <TextInput label="ID do pedido" maxLength={SHORT_TEXT_MAX_LENGTH} {...form.getInputProps('external_id')} />
           <TextInput
             label="Empresa"
             placeholder="Ex: Acme Corp Industries"
+            maxLength={SHORT_TEXT_MAX_LENGTH}
             {...form.getInputProps('company_id')}
           />
           <Input.Wrapper label="Nota">

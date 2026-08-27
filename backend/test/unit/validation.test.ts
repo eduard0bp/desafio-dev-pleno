@@ -60,6 +60,27 @@ describe('createReviewSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('every validation error message is in Portuguese, not Zod\'s default English', () => {
+    const cases = [
+      { external_id: '', company_id: 'y', rating: 3, comment: 'comentário válido' },
+      { external_id: 'x', company_id: '', rating: 3, comment: 'comentário válido' },
+      { external_id: 'x', company_id: 'y'.repeat(101), rating: 3, comment: 'comentário válido' },
+      { external_id: 'x', company_id: 'y', rating: 10, comment: 'comentário válido' },
+      { external_id: 'x', company_id: 'y', rating: 'not-a-number', comment: 'comentário válido' },
+      { external_id: 'x', company_id: 'y', rating: 3, comment: 'ok' },
+      { external_id: 'x', company_id: 'y', rating: 3, comment: 'a'.repeat(2001) },
+    ];
+
+    for (const payload of cases) {
+      const result = createReviewSchema.safeParse(payload);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const message = result.error.issues[0]?.message ?? '';
+        expect(message).not.toMatch(/expected|received|too (big|small)|invalid input/i);
+      }
+    }
+  });
 });
 
 describe('listReviewsQuerySchema', () => {

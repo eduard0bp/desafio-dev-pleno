@@ -98,4 +98,19 @@ describe('ReviewForm', () => {
     );
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('shows an inline error when the company name exceeds 100 characters', async () => {
+    const spy = vi.spyOn(api, 'createReview');
+
+    renderForm();
+    fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: 'a'.repeat(101) } });
+    fireEvent.change(screen.getByLabelText('Comentário'), { target: { value: 'comentário válido' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('O nome da empresa deve ter no máximo 100 caracteres')).toBeInTheDocument()
+    );
+    expect(spy).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Empresa')).toHaveAttribute('maxLength', '100');
+  });
 });
