@@ -1,15 +1,4 @@
-import {
-  ActionIcon,
-  Badge,
-  Divider,
-  Group,
-  Indicator,
-  Popover,
-  ScrollArea,
-  Stack,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { ActionIcon, Badge, Divider, Group, Indicator, Popover, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell } from '@tabler/icons-react';
 import { useNegativeReviewsQuery, useMarkReviewAsReadMutation } from '../../hooks';
@@ -59,31 +48,20 @@ export function NotificationBell() {
               Nenhuma avaliação negativa por enquanto.
             </Text>
           ) : (
-            <ScrollArea.Autosize mah={280}>
-              <Stack gap={0}>
-                {reviews.map((review) => (
-                  <UnstyledButton
-                    key={review.id}
-                    className={classes.item}
-                    onClick={() => handleSelect(review.id)}
-                  >
-                    <Stack gap={2} p="sm">
-                      <Group justify="space-between" gap="xs" wrap="nowrap">
-                        <Text size="sm" fw={500} truncate="end">
-                          {review.company_id}
-                        </Text>
-                        <Badge color="red" size="xs">
-                          Negativo
-                        </Badge>
-                      </Group>
-                      <Text size="xs" c="dimmed" truncate="end">
-                        {review.comment}
-                      </Text>
-                    </Stack>
-                  </UnstyledButton>
-                ))}
-              </Stack>
-            </ScrollArea.Autosize>
+            <Stack gap={0}>
+              {reviews.map((review) => (
+                <UnstyledButton key={review.id} className={classes.item} onClick={() => handleSelect(review.id)}>
+                  <Group justify="space-between" gap="xs" wrap="nowrap" px="sm" py={6}>
+                    <Text size="sm" fw={500} truncate="end">
+                      {review.company_id}
+                    </Text>
+                    <Badge color="red" size="xs">
+                      Negativo
+                    </Badge>
+                  </Group>
+                </UnstyledButton>
+              ))}
+            </Stack>
           )}
         </Stack>
       </Popover.Dropdown>
