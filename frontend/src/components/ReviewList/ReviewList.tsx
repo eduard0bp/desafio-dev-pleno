@@ -443,8 +443,7 @@ export function ReviewList() {
                       ) : review.status === 'completed' ? (
                         <Tooltip label="Ver detalhes da avaliação">
                           <ActionIcon
-                            variant="filled"
-                            color="tertiary"
+                            variant="default"
                             aria-label="Ver detalhes da avaliação"
                             onClick={(event) => {
                               event.stopPropagation();
