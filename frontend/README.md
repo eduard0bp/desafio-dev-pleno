@@ -51,8 +51,11 @@ Scripts de build/produção equivalentes: `npm run build` e `npm run preview`.
 # testes unitários/de componente (Vitest + Testing Library, sem backend real)
 npm test
 
-# teste e2e (Playwright)
+# testes e2e (Playwright)
 npm run test:e2e
+
+# testes e2e com a UI do Playwright (útil para debugar um fluxo específico)
+npm run test:e2e:ui
 ```
 
 O `test:e2e` espera a stack completa rodando — API, worker, Postgres,
@@ -65,9 +68,15 @@ docker compose up --build -d
 npm run test:e2e
 ```
 
-O cenário e2e cadastra uma avaliação e acompanha o status até um estado
-terminal. Ele aceita tanto "Concluído" quanto "Falhou" como resultado
-válido: a API fake de análise tem falhas periódicas propositais
-(`FAIL_EVERY_N` no `.env`) que persistem mesmo com a política de retry do
-worker, então uma avaliação eventualmente terminar como "Falhou" é
-comportamento esperado, não um bug do teste.
+A suíte segue o padrão Page Object Model: cada página/componente da UI
+tem seu próprio objeto Playwright em `e2e/pages/`/`e2e/components/`
+(seletores e ações), com os specs organizados por página
+(`e2e/pages/review-page/*.spec.ts`, `e2e/pages/review-form-page/*.spec.ts`,
+além de `e2e/navigation.spec.ts`). Ela nunca acessa o Postgres
+diretamente — todo dado de teste é criado através do fluxo real de UI
+(cadastro de avaliação via formulário), e nada é limpo ao final. Vários
+testes aceitam tanto "Concluído" quanto "Falhou" como resultado válido:
+a API fake de análise tem falhas periódicas propositais (`FAIL_EVERY_N`
+no `.env`) que persistem mesmo com a política de retry do worker, então
+uma avaliação eventualmente terminar como "Falhou" é comportamento
+esperado, não um bug do teste.

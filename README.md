@@ -15,6 +15,11 @@ docker compose up --build
 - API: http://localhost:3000
 - API fake de análise: http://localhost:4000
 
+> Todas as variáveis em `compose.yaml` têm um valor padrão, então
+> `docker compose up --build` funciona mesmo sem copiar `.env` primeiro —
+> o `cp .env.example .env` só é necessário se você quiser customizar algo
+> (portas, `FAIL_EVERY_N`, etc.).
+
 Depois que os containers subirem, abra o frontend: a sidebar tem duas
 seções — "Área do cliente", com "Enviar Avaliação" (`/avaliar`, cadastro),
 e "Painel interno", com "Monitoramento" (`/admin/avaliacoes`, lista, tela
@@ -87,16 +92,73 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   a limpeza de um arquivo apague dados que outro arquivo está usando.
   Detalhado em [`backend/README.md`](backend/README.md).
 - **`/health` verifica dependências reais:** o endpoint testa `SELECT 1`
-  no Postgres e `PING` no Redis (`backend/src/services/healthService.ts`)
-  em vez de responder `{status:"ok"}` de forma estática — retorna `503` e
-  `status:"degraded"` se qualquer um dos dois estiver fora do ar. É esse
-  mesmo endpoint que o `healthcheck` do `backend-api` no `compose.yaml`
-  usa, então agora ele reflete o estado real das dependências.
-- **Teste e2e tolera falha simulada:** o teste Playwright aceita tanto
-  "Concluído" quanto "Falhou" como status terminal válido, porque a API
-  fake de análise tem falhas periódicas propositais (`FAIL_EVERY_N`) que
-  persistem mesmo com a política de retry — não é um bug do teste, é o
-  comportamento esperado de uma dependência que às vezes falha de verdade.
+  no Postgres e `PING` no Redis (`backend/src/lib/health.ts`) em vez de
+  responder `{status:"ok"}` de forma estática — retorna `503` e
+  `status:"degraded"` se qualquer um dos dois estiver fora do ar. Tanto a
+  API quanto o worker expõem esse endpoint (o worker numa porta HTTP
+  própria, `WORKER_PORT`, sem depender do Express), e é isso que os
+  `healthcheck` de ambos os serviços no `compose.yaml` usam — refletindo o
+  estado real das dependências dos dois processos, não só da API.
+- **Configuração centralizada e validada:** variáveis de ambiente são lidas
+  uma única vez, na subida do processo, e validadas com Zod
+  (`backend/src/config.ts`) — em vez de `process.env.X` espalhado pelas
+  rotas/worker. Um valor inválido ou ausente falha rápido, na subida, em
+  vez de gerar um erro obscuro no meio de uma requisição.
+- **Erros HTTP tipados:** as rotas lançam `ValidationError`,
+  `NotFoundError` e `ConflictError` (`backend/src/errors.ts`), capturados
+  de forma centralizada pelo middleware de erro do Express — em vez de
+  cada rota montar sua própria resposta de erro manualmente. O formato da
+  resposta JSON (`{error, message}` com o status correspondente) não
+  mudou, só a forma como é produzido.
+- **Correlação de logs entre API e worker:** o `request_id` gerado pelo
+  middleware de log da API é propagado no payload do job da fila
+  (`ReviewJobData.requestId`) e aparece nos logs do worker — dá pra seguir
+  uma review específica do `POST /reviews` até o processamento assíncrono
+  olhando um único identificador nos dois processos.
+- **Desligamento gracioso (`SIGTERM`):** tanto a API quanto o worker
+  tratam `SIGTERM` — a API para de aceitar novas conexões e espera as em
+  andamento terminarem (`server.close()`); o worker fecha a conexão com a
+  fila, limpa o intervalo de reconciliação e fecha seu servidor de health
+  antes de sair. Evita interromper uma requisição ou um job no meio da
+  execução durante um deploy/restart.
+- **Organização por camada no backend:** `lib/` para infraestrutura
+  (Prisma, Redis, health, retry), `jobs/` para processos de background
+  (reconciliação), `services/` para lógica de domínio (reviews, alertas),
+  `mappers/` para tradução entre modelo do banco e resposta da API. Os
+  testes unitários ficam ao lado do arquivo que testam
+  (`src/**/*.test.ts`), no mesmo padrão do frontend, em vez de uma árvore
+  `test/unit/` espelhada — só os testes de integração (que dependem de
+  Postgres/Redis reais) ficam em `test/integration/`.
+- **Sino de notificações:** a UI faz polling de reviews com sentimento
+  negativo e ainda não lidas (`is_read` no banco); o sino mostra a
+  contagem e, ao abrir um item, marca a review como lida
+  (`POST /reviews/:id/read`) para que ela saia da lista — sem exigir
+  SSE/WebSocket, já que o polling existente já traz a informação
+  necessária.
+- **Reprocessamento manual:** reviews `failed` podem ser reenviadas para a
+  fila por um botão de retry na lista (endpoint dedicado no backend), sem
+  esperar o job de reconciliação — útil quando o usuário já sabe que a
+  causa da falha foi resolvida (ex.: instabilidade temporária da API
+  externa).
+- **Filtro por sentimento/nota mínima e ação por status:** a coluna Ações
+  mostra um botão de "ver detalhes" (ícone de olho) só para reviews
+  `completed`, e o botão de retry só para `failed` — nunca os dois ao
+  mesmo tempo, já que cada review só está em um dos dois estados
+  terminais.
+- **pt-BR nos componentes de data:** o `DatesProvider` do Mantine é
+  configurado com o locale `dayjs` `pt-br`, então o calendário de filtro
+  por período usa nomes de mês/dia em português em vez do padrão em
+  inglês da biblioteca.
+- **Teste e2e reescrito seguindo Page Object Model, sem tocar no banco:**
+  cada página/componente da UI tem seu próprio objeto Playwright em
+  `frontend/e2e/pages/`/`frontend/e2e/components/` (rotas, seletores,
+  ações), com os specs organizados por página em vez de por
+  funcionalidade. A suíte nunca acessa o Postgres diretamente — todo dado
+  de teste é criado através do fluxo real de UI (`POST /reviews` via
+  formulário), e nada é limpo ao final; assim como o teste original, ela
+  tolera tanto "Concluído" quanto "Falhou" como status terminal válido
+  para os casos que dependem do resultado da API fake de análise, cujas
+  falhas periódicas (`FAIL_EVERY_N`) são propositais.
 - **Uso de IA:** o Claude Code (Anthropic) foi usado do início ao fim deste
   desafio — para discutir a arquitetura, escrever a spec técnica, planejar
   as tasks, gerar a base de código (rotas, worker, fila, testes unitários,
@@ -110,15 +172,13 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   publicar o job no Redis — se o processo cair entre os dois passos, a
   review ficaria presa em `pending`. Mitigado por um job de reconciliação
   (`reconcileStuckReviews`/`startReconciliationLoop` em
-  `backend/src/services/reconciliationService.ts`) que roda a cada 60s no
+  `backend/src/jobs/reconciliationService.ts`) que roda a cada 60s no
   processo do worker, varre reviews `pending` há mais de 2 minutos sem job
   correspondente na fila e as reenfileira. Não é uma garantia
   transacional de verdade (isso exigiria um outbox pattern), mas cobre o
   caso real de crash entre os dois passos sem a complexidade de uma
   tabela de outbox.
 - Sem SSE/WebSocket — a atualização de status na tela depende de polling.
-- Sem alertas para avaliações negativas.
-- Sem endpoint de reprocessamento manual para reviews `failed`.
 - `VITE_API_URL` é definida em build time da imagem Docker do frontend
   (`http://localhost:3000`, veja `compose.yaml`), não em runtime. Isso
   funciona bem para rodar tudo localmente, mas significa que a UI só fala
@@ -127,6 +187,35 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   exigiria rebuildar a imagem com um `VITE_API_URL` diferente (ou passar a
   injetar a URL em runtime, ex. via um `env.js` gerado na inicialização do
   container).
-- Backend e worker não implementam desligamento gracioso (não há handler de
-  `SIGTERM`): em produção isso pode interromper uma requisição ou um job em
-  andamento no meio da execução durante um deploy/restart.
+
+## Endpoints
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/reviews` | Cria uma review e enfileira o job de análise. Aceita `Idempotency-Key` (deve ser igual a `external_id`, se enviado). |
+| `GET` | `/reviews` | Lista reviews com paginação e filtros (`page`, `pageSize`, `status`, `minRating`, `search`, `dateFrom`, `dateTo`). Responde `{ data, pagination, counts }`. |
+| `GET` | `/reviews/:id` | Detalhe de uma review. |
+| `POST` | `/reviews/:id/retry` | Reenfileira uma review `failed` para reprocessamento manual. |
+| `POST` | `/reviews/:id/read` | Marca uma review como lida (usado pelo sino de notificações). |
+| `GET` | `/health` | Checagem de saúde (Postgres + Redis). Exposto tanto pela API quanto pelo worker (`WORKER_PORT`). |
+
+## Scripts disponíveis
+
+Veja [`backend/README.md`](backend/README.md) e
+[`frontend/README.md`](frontend/README.md) para a lista completa de
+scripts de cada pacote (dev, build, testes unitários/integração/e2e).
+Alguns dos mais usados:
+
+```bash
+# backend/
+npm run dev            # API em modo watch
+npm run dev:worker      # worker em modo watch
+npm run test            # testes unitários
+npm run test:integration # testes de integração (requer Postgres/Redis)
+
+# frontend/
+npm run dev             # Vite dev server
+npm run test             # testes unitários (Vitest)
+npm run test:e2e         # testes e2e (Playwright, requer stack no ar)
+npm run test:e2e:ui      # testes e2e com a UI do Playwright
+```

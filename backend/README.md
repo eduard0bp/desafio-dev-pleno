@@ -28,8 +28,14 @@ Variáveis esperadas:
 |---|---|
 | `DATABASE_URL` | connection string do Postgres usada pelo Prisma |
 | `PORT` | porta em que a API HTTP escuta (padrão `3000`) |
+| `WORKER_PORT` | porta em que o worker expõe seu próprio `/health` (padrão `3001`) |
 | `REDIS_URL` | connection string do Redis usada pela fila BullMQ |
 | `MOCK_ANALYSIS_API_URL` | URL base da API fake de análise |
+
+Todas as variáveis são lidas e validadas uma única vez na subida do
+processo (`src/config.ts`, com Zod) — um valor ausente ou inválido faz o
+processo falhar imediatamente, em vez de um erro obscuro em algum ponto
+no meio da execução.
 
 Antes do primeiro `dev`, aplique as migrations do Prisma:
 
@@ -78,6 +84,12 @@ vários arquivos (`test/integration/*.test.ts`), então o
 arquivo apague dados que outro arquivo, rodando em paralelo, ainda estava
 usando — o efeito colateral é que `npm run test:integration` roda mais
 devagar que se fosse paralelo, o que é intencional.
+
+Os testes unitários ficam ao lado do arquivo que testam
+(`src/**/*.test.ts`, ex. `src/lib/health.test.ts`), e são excluídos do
+build de produção via `tsconfig.json` (`exclude: ["src/**/*.test.ts"]`).
+Só os testes de integração, que dependem de Postgres/Redis reais, ficam
+numa árvore separada (`test/integration/`).
 
 ## Header `x-mock-scenario`
 
