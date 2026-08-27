@@ -137,6 +137,18 @@ const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', '
 // wider than its column's fr share pushes that track wider than the same
 // column in every other row, breaking alignment down the table.
 const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center', minWidth: 0 } as const;
+// Pins the Ações column to the right edge of the horizontally-scrolling
+// table instead of scrolling away with the rest of the row — needs an
+// opaque background (matching the page/card background) so content that
+// has scrolled underneath doesn't show through, and a left border to mark
+// where the sticky column begins once something actually is underneath it.
+const STICKY_ACTIONS_CELL_STYLE = {
+  ...CELL_FLEX_STYLE,
+  position: 'sticky',
+  right: 0,
+  backgroundColor: 'var(--mantine-color-body)',
+  borderLeft: '1px solid var(--mantine-color-default-border)',
+} as const;
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -338,7 +350,15 @@ export function ReviewList() {
               style={{ display: 'grid', gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gap: 'var(--mantine-spacing-sm)' }}
             >
               {COLUMN_LABELS.map((label) => (
-                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed">
+                <Text
+                  key={label}
+                  role="columnheader"
+                  size="sm"
+                  fw={600}
+                  c="dimmed"
+                  ta="left"
+                  style={label === 'Ações' ? STICKY_ACTIONS_CELL_STYLE : undefined}
+                >
                   {label}
                 </Text>
               ))}
@@ -424,7 +444,7 @@ export function ReviewList() {
                     <Text role="cell" size="sm" c="dimmed" miw={0}>
                       {new Date(review.created_at).toLocaleDateString('pt-BR')}
                     </Text>
-                    <Box role="cell" style={CELL_FLEX_STYLE}>
+                    <Box role="cell" style={STICKY_ACTIONS_CELL_STYLE}>
                       {review.status === 'failed' ? (
                         <Tooltip label="Reprocessar avaliação com falha">
                           <ActionIcon
