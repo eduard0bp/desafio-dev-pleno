@@ -181,7 +181,14 @@ export function ReviewList() {
         <FilterFields filters={filters} />
       </Group>
 
-      <Drawer opened={filtersOpened} onClose={closeFilters} position="top" size="auto" title="Filtros" hiddenFrom="sm">
+      <Drawer
+        opened={filtersOpened}
+        onClose={closeFilters}
+        position="top"
+        title="Filtros"
+        hiddenFrom="sm"
+        styles={{ content: { height: 'auto' } }}
+      >
         <Stack gap="sm">
           <FilterFields filters={filters} />
           <Group gap="sm" grow>
