@@ -113,11 +113,21 @@ function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange:
 
 // Only Empresa (company name + comment) truncates — every other column gets
 // a fixed pixel width wide enough for its longest possible label (badges,
-// dates, the star rating), so their text never needs cutting. Empresa gets
-// the remaining flexible space via minmax(…, 1fr); on narrow viewports the
-// table's horizontal scroll (see the wrapping Box below) kicks in instead
-// of squeezing any column below its fixed width.
+// dates, the star rating), so their text never needs cutting. Empresa keeps
+// minmax(…, 1fr) so it fills whatever space is left on wide desktop
+// viewports; the fixed columns' combined width (see TABLE_MIN_WIDTH below)
+// is what protects narrow viewports instead.
 const GRID_TEMPLATE_COLUMNS = 'minmax(160px, 1fr) 110px 120px 100px 110px 90px 60px';
+// Sum of every column's minimum (Empresa's 160px floor + the fixed columns),
+// plus the row's 6 inter-column gaps and its horizontal padding. Used as an
+// explicit min-width instead of CSS `max-content`: `max-content` would ask
+// the browser to measure each row's full, untruncated content to size the
+// table, and since Empresa is an open-ended 1fr track, one unusually long
+// company name would balloon that measurement (and the table's width) far
+// past the viewport on both mobile and desktop. A plain numeric floor never
+// measures content, so it can't be blown out that way — a name still gets
+// truncated at Empresa's actual rendered width, whatever that ends up being.
+const TABLE_MIN_WIDTH = 160 + 110 + 120 + 100 + 110 + 90 + 60 + 6 * 10 + 32;
 const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data', 'Ações'];
 // Badge/StatusBadge are inline-level elements — wrapped in a plain block Box,
 // their surrounding line-height leaves phantom space that shifts them a few
@@ -311,14 +321,15 @@ export function ReviewList() {
       </Drawer>
 
       <Box style={{ overflowX: 'auto' }}>
-        {/* minWidth: max-content — without it, this flex column collapses to
-            the scroll container's available width instead of the fixed-px
-            grid columns' natural width, and the rows' content (badges, the
-            rating) overflows past their card's border instead of the whole
-            table scrolling horizontally. */}
+        {/* Without a min-width here, this flex column collapses to the
+            scroll container's available width instead of the columns'
+            combined width, and the rows' content (badges, the rating)
+            overflows past their card's border instead of the whole table
+            scrolling horizontally. See TABLE_MIN_WIDTH above for why this
+            is a plain number rather than CSS `max-content`. */}
         <Box
           role="table"
-          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)', minWidth: 'max-content' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)', minWidth: TABLE_MIN_WIDTH }}
         >
           <Box role="rowgroup">
             <Box
