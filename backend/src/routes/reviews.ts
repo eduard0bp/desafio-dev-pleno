@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
 import { createReviewSchema, listReviewsQuerySchema } from '../validation';
-import { createReview, listReviews, getReviewById } from '../services/reviewService';
-import { enqueueReviewJob } from '../queue/reviewQueue';
+import { createReview, listReviews, getReviewById, retryReview } from '../services/reviewService';
+import { enqueueReviewJob, removeReviewJob } from '../queue/reviewQueue';
 import type { Review } from '@prisma/client';
 import type { Request } from 'express';
 import type { CoreReviewListItem, CoreReviewDetail } from '../types';
@@ -80,6 +80,28 @@ reviewsRouter.get('/reviews/:id', async (req, res, next) => {
       return res.status(404).json(errorResponse(req, 'NOT_FOUND', 'Review não encontrada'));
     }
     res.json(toDetail(review));
+  } catch (err) {
+    next(err);
+  }
+});
+
+reviewsRouter.post('/reviews/:id/retry', async (req, res, next) => {
+  try {
+    const review = await getReviewById(req.params.id);
+    if (!review) {
+      return res.status(404).json(errorResponse(req, 'NOT_FOUND', 'Review não encontrada'));
+    }
+    if (review.status !== 'failed') {
+      return res
+        .status(409)
+        .json(errorResponse(req, 'INVALID_STATE', 'Só é possível reprocessar avaliações com status "failed"'));
+    }
+
+    await removeReviewJob(review.id);
+    const updated = await retryReview(review.id);
+    await enqueueReviewJob({ reviewId: updated.id });
+
+    res.status(202).json({ id: updated.id, external_id: updated.externalId, status: updated.status });
   } catch (err) {
     next(err);
   }

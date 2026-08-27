@@ -107,3 +107,12 @@ export async function listReviews(filters: ListReviewsFilters): Promise<ListRevi
 export async function getReviewById(id: string): Promise<Review | null> {
   return prisma.review.findUnique({ where: { id } });
 }
+
+/** Resets a review so it can be reprocessed from scratch. Caller must have
+ * already confirmed the review exists and is currently `failed`. */
+export async function retryReview(id: string): Promise<Review> {
+  return prisma.review.update({
+    where: { id },
+    data: { status: 'pending', lastError: Prisma.JsonNull, attempts: 0, processedAt: null },
+  });
+}

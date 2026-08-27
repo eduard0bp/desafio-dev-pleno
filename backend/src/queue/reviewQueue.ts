@@ -19,3 +19,13 @@ export async function enqueueReviewJob(data: ReviewJobData): Promise<void> {
     removeOnFail: 100,
   });
 }
+
+/**
+ * A job's BullMQ id is stable (the review id), so a terminal (failed) job
+ * from a previous attempt must be removed before enqueueing a fresh one —
+ * otherwise add() is a no-op against the already-existing job.
+ */
+export async function removeReviewJob(reviewId: string): Promise<void> {
+  const job = await reviewQueue.getJob(reviewId);
+  if (job) await job.remove();
+}

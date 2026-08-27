@@ -1,14 +1,19 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, afterAll } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import { prisma } from '../../src/lib/prisma';
+import { reviewQueue } from '../../src/queue/reviewQueue';
 
 const app = createApp();
 
 describe('Reviews API', () => {
   afterEach(async () => {
     await prisma.review.deleteMany({ where: { externalId: { startsWith: 'test-' } } });
+  });
+
+  afterAll(async () => {
+    await reviewQueue.close();
   });
 
   it('POST /reviews creates a review and responds 202 pending', async () => {
@@ -173,5 +178,43 @@ describe('Reviews API', () => {
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe('NOT_FOUND');
     expect(response.body.request_id).toBeTruthy();
+  });
+
+  it('POST /reviews/:id/retry returns 404 for a nonexistent id', async () => {
+    const response = await request(app).post(`/reviews/${randomUUID()}/retry`);
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('POST /reviews/:id/retry returns 409 when the review is not failed', async () => {
+    const created = await request(app).post('/reviews').send({
+      external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 3, comment: 'ainda pendente',
+    });
+
+    const response = await request(app).post(`/reviews/${created.body.id}/retry`);
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('INVALID_STATE');
+  });
+
+  it('POST /reviews/:id/retry resets a failed review to pending and re-enqueues it', async () => {
+    const created = await request(app).post('/reviews').send({
+      external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 1, comment: 'vai falhar de propósito',
+    });
+    await prisma.review.update({
+      where: { id: created.body.id },
+      data: { status: 'failed', attempts: 5, lastError: { message: 'esgotou as tentativas' } },
+    });
+
+    const response = await request(app).post(`/reviews/${created.body.id}/retry`);
+    expect(response.status).toBe(202);
+    expect(response.body).toMatchObject({ id: created.body.id, status: 'pending' });
+
+    const updated = await prisma.review.findUniqueOrThrow({ where: { id: created.body.id } });
+    expect(updated.status).toBe('pending');
+    expect(updated.attempts).toBe(0);
+    expect(updated.lastError).toBeNull();
+
+    const job = await reviewQueue.getJob(created.body.id);
+    expect(job).not.toBeUndefined();
   });
 });

@@ -1,10 +1,11 @@
-import { Alert, Badge, Center, Group, Loader, Rating, ScrollArea, Stack, Text } from '@mantine/core';
-import { useReviewQuery } from '../../hooks';
+import { Alert, Badge, Button, Center, Group, Loader, Rating, ScrollArea, Stack, Text } from '@mantine/core';
+import { useReviewQuery, useRetryReviewMutation } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
 
 export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
   const { data, isLoading, isError, error } = useReviewQuery(reviewId);
+  const retryMutation = useRetryReviewMutation(reviewId);
 
   if (isLoading) {
     return (
@@ -38,9 +39,19 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
         </Group>
       )}
       {data.status === 'failed' && (
-        <Alert color="red">
-          {data.last_error?.message ?? 'Falha ao processar esta avaliação após todas as tentativas.'}
-        </Alert>
+        <>
+          <Alert color="red">
+            {data.last_error?.message ?? 'Falha ao processar esta avaliação após todas as tentativas.'}
+          </Alert>
+          <Button
+            variant="light"
+            color="tertiary"
+            loading={retryMutation.isPending}
+            onClick={() => retryMutation.mutate()}
+          >
+            Reprocessar avaliação
+          </Button>
+        </>
       )}
     </Stack>
   );

@@ -4,6 +4,7 @@ import type {
   CoreCreateReviewResult,
   CoreListReviewsParams,
   CoreListReviewsResult,
+  CoreRetryReviewResult,
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -62,4 +63,8 @@ export async function listReviews(params: CoreListReviewsParams): Promise<CoreLi
 
 export async function getReview(id: string): Promise<CoreReviewDetail> {
   return requestJson(`${API_URL}/reviews/${id}`, undefined, 'Falha ao carregar avaliação');
+}
+
+export async function retryReview(id: string): Promise<CoreRetryReviewResult> {
+  return requestJson(`${API_URL}/reviews/${id}/retry`, { method: 'POST' }, 'Falha ao reprocessar avaliação');
 }

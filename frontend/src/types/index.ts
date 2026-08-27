@@ -9,3 +9,4 @@ export * from './CorePagination';
 export * from './CoreReviewStatusCounts';
 export * from './CoreListReviewsParams';
 export * from './CoreListReviewsResult';
+export * from './CoreRetryReviewResult';
