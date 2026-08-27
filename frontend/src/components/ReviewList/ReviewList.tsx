@@ -138,22 +138,26 @@ const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', '
 // column in every other row, breaking alignment down the table.
 const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center', minWidth: 0 } as const;
 // Pins the Ações column to the right edge of the horizontally-scrolling
-// table instead of scrolling away with the rest of the row. Plain
-// background-only stickiness for the header cell, which has no card look
-// to preserve.
+// table instead of scrolling away with the rest of the row. A left-edge
+// box-shadow (not a border) marks the pinned edge — a real border here
+// would draw its own rounded box around whatever sits inside the cell,
+// nesting visibly with that content's own border (e.g. the eye button's
+// `variant="default"` outline) instead of reading as one seamless card
+// edge, which is what a border did before.
+const STICKY_EDGE_SHADOW = '-8px 0 12px -8px rgba(0, 0, 0, 0.15)';
 const STICKY_ACTIONS_HEADER_STYLE = {
   position: 'sticky',
   right: 0,
   backgroundColor: 'var(--mantine-color-body)',
+  boxShadow: STICKY_EDGE_SHADOW,
 } as const;
 // Each row's Ações cell needs more than a sticky background: the grid's
 // alignItems: center (see the row's own style below) only gives the cell
 // its content's height, not the full row height, so a plain background
 // leaves a gap above/below through which the scrolled-under Status badge
-// shows — alignSelf: stretch fixes that. And since the pinned cell no
-// longer scrolls together with the card's own right border once stuck, it
-// reads as a button floating disconnected from its card unless it draws
-// that edge itself — hence the border and matching right-side radius.
+// shows — alignSelf: stretch fixes that. The border-radius has no visible
+// border to round (see STICKY_EDGE_SHADOW above) but still clips the
+// background color into the card's own corner radius on this side.
 const STICKY_ACTIONS_ROW_STYLE = {
   ...CELL_FLEX_STYLE,
   position: 'sticky',
@@ -161,9 +165,7 @@ const STICKY_ACTIONS_ROW_STYLE = {
   alignSelf: 'stretch',
   justifyContent: 'center',
   backgroundColor: 'var(--mantine-color-body)',
-  borderTop: '1px solid var(--mantine-color-default-border)',
-  borderRight: '1px solid var(--mantine-color-default-border)',
-  borderBottom: '1px solid var(--mantine-color-default-border)',
+  boxShadow: STICKY_EDGE_SHADOW,
   borderTopRightRadius: 'var(--mantine-radius-md)',
   borderBottomRightRadius: 'var(--mantine-radius-md)',
 } as const;
