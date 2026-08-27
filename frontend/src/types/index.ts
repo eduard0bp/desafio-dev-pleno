@@ -11,3 +11,4 @@ export * from './CoreReviewStatusCounts';
 export * from './CoreListReviewsParams';
 export * from './CoreListReviewsResult';
 export * from './CoreRetryReviewResult';
+export * from './CoreMarkReviewReadResult';

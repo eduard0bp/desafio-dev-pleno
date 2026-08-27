@@ -3,7 +3,9 @@ import { render, screen, waitFor, fireEvent, within } from '@testing-library/rea
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReviewList } from './ReviewList';
-import { getMockCoreReviewListItem, getMockCoreListReviewsResult } from '../../testUtils';
+import { SelectedReviewModal } from '../SelectedReviewModal/SelectedReviewModal';
+import { SelectedReviewProvider } from '../../context/SelectedReviewContext';
+import { getMockCoreReviewListItem, getMockCoreListReviewsResult, getMockCoreReviewDetail } from '../../testUtils';
 import type { CoreListReviewsParams, CoreListReviewsResult, CoreReviewListItem } from '../../types';
 import * as api from '../../api';
 
@@ -12,7 +14,10 @@ function renderList() {
   render(
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
-        <ReviewList />
+        <SelectedReviewProvider>
+          <ReviewList />
+          <SelectedReviewModal />
+        </SelectedReviewProvider>
       </QueryClientProvider>
     </MantineProvider>
   );
@@ -82,6 +87,20 @@ describe('ReviewList', () => {
     expect(within(row).getByText('Concluído')).toBeInTheDocument();
     expect(within(row).getByText('Positivo')).toBeInTheDocument();
     expect(within(row).getByText('Entrega')).toBeInTheDocument();
+  });
+
+  it('opens the review detail modal when a row is clicked', async () => {
+    vi.spyOn(api, 'listReviews').mockResolvedValue(
+      getMockCoreListReviewsResult({ data: [getMockCoreReviewListItem({ company_id: 'Acme Corp' })] })
+    );
+    vi.spyOn(api, 'getReview').mockResolvedValue(getMockCoreReviewDetail({ company_id: 'Acme Corp' }));
+    renderList();
+    await waitFor(() => expect(screen.getByText('Acme Corp')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('row', { name: /Acme Corp/ }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Detalhe da avaliação' });
+    await waitFor(() => expect(within(dialog).getByText('Acme Corp')).toBeInTheDocument());
   });
 
   // TanStack Query retries failed queries by default (3 retries with backoff),

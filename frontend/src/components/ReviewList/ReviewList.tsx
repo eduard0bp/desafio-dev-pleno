@@ -10,7 +10,6 @@ import {
   Flex,
   Group,
   Loader,
-  Modal,
   Paper,
   Pagination,
   Rating,
@@ -19,16 +18,17 @@ import {
   Text,
   TextInput,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { DatePickerInput } from '@mantine/dates';
+import { DatePickerInput, type DateValue } from '@mantine/dates';
 import { IconAlertTriangle, IconFilter, IconFilterOff, IconInbox, IconRefresh } from '@tabler/icons-react';
 import { useReviewsQuery, useRetryReviewMutation } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
-import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
 import { TableStateMessage } from '../TableStateMessage/TableStateMessage';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
+import { useSelectedReview } from '../../context/SelectedReviewContext';
 import type { CoreReviewStatusCounts, CoreReviewSentiment } from '../../types';
 import classes from './ReviewList.module.css';
 
@@ -46,6 +46,14 @@ interface FieldFilterHandlers {
   setDateFrom: (value: Date | null) => void;
   setDateTo: (value: Date | null) => void;
   setSentiment: (value: CoreReviewSentiment | null) => void;
+}
+
+// DatePickerInput's onChange hands back an ISO date string (not a Date), so
+// filter state — and the .toISOString() call in buildListReviewsQuery — needs
+// a real Date instance instead.
+function toDateOrNull(value: DateValue): Date | null {
+  if (!value) return null;
+  return value instanceof Date ? value : new Date(value);
 }
 
 // Desktop wires these fields straight to the real filters (applies as you
@@ -72,14 +80,14 @@ function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange:
       <DatePickerInput
         placeholder="Data inicial"
         value={value.dateFrom}
-        onChange={(v) => onChange.setDateFrom(v as Date | null)}
+        onChange={(v) => onChange.setDateFrom(toDateOrNull(v))}
         w={{ base: '100%', xs: 150 }}
         clearable
       />
       <DatePickerInput
         placeholder="Data final"
         value={value.dateTo}
-        onChange={(v) => onChange.setDateTo(v as Date | null)}
+        onChange={(v) => onChange.setDateTo(toDateOrNull(v))}
         w={{ base: '100%', xs: 150 }}
         clearable
       />
@@ -133,10 +141,10 @@ const EMPTY_COUNTS: CoreReviewStatusCounts = { all: 0, pending: 0, processing: 0
 const PAGE_SIZE = 10;
 
 export function ReviewList() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filtersOpened, { open: openFiltersDisclosure, close: closeFilters }] = useDisclosure(false);
   const filters = useReviewFilters();
   const retryMutation = useRetryReviewMutation();
+  const { openReview } = useSelectedReview();
 
   // The mobile drawer edits this draft instead of the real filters, so
   // typing/picking values doesn't trigger a request until the user taps
@@ -335,7 +343,7 @@ export function ReviewList() {
                     radius="md"
                     p="sm"
                     className={classes.row}
-                    onClick={() => setSelectedId(review.id)}
+                    onClick={() => openReview(review.id)}
                     style={{
                       display: 'grid',
                       gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
@@ -380,18 +388,20 @@ export function ReviewList() {
                     </Text>
                     <Box role="cell" style={CELL_FLEX_STYLE}>
                       {review.status === 'failed' ? (
-                        <ActionIcon
-                          variant="filled"
-                          color="tertiary"
-                          aria-label="Reprocessar avaliação"
-                          loading={retryMutation.isPending && retryMutation.variables === review.id}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            retryMutation.mutate(review.id);
-                          }}
-                        >
-                          <IconRefresh size={16} />
-                        </ActionIcon>
+                        <Tooltip label="Reprocessar avaliação com falha">
+                          <ActionIcon
+                            variant="filled"
+                            color="tertiary"
+                            aria-label="Reprocessar avaliação"
+                            loading={retryMutation.isPending && retryMutation.variables === review.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              retryMutation.mutate(review.id);
+                            }}
+                          >
+                            <IconRefresh size={16} />
+                          </ActionIcon>
+                        </Tooltip>
                       ) : (
                         <Text c="dimmed" size="sm">
                           —
@@ -414,10 +424,6 @@ export function ReviewList() {
           <Pagination total={pagination.totalPages} value={pagination.page} onChange={filters.setPage} radius="md" />
         </Flex>
       )}
-
-      <Modal opened={selectedId != null} onClose={() => setSelectedId(null)} title="Detalhe da avaliação" centered>
-        {selectedId && <ReviewDetailPanel reviewId={selectedId} />}
-      </Modal>
     </Stack>
   );
 }

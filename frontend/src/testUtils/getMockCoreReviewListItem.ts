@@ -10,6 +10,7 @@ export function getMockCoreReviewListItem(overrides: Partial<CoreReviewListItem>
     comment: faker.lorem.sentence(),
     status: 'completed',
     analysis: null,
+    is_read: false,
     created_at: faker.date.recent({ days: 30 }).toISOString(),
     ...overrides,
   };

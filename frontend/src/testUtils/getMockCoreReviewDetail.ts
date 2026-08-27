@@ -10,6 +10,7 @@ export function getMockCoreReviewDetail(overrides: Partial<CoreReviewDetail> = {
     status: 'pending',
     comment: faker.lorem.sentence(),
     analysis: null,
+    is_read: false,
     attempts: 0,
     created_at: faker.date.recent({ days: 30 }).toISOString(),
     processed_at: null,

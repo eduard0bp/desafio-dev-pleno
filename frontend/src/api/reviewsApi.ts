@@ -5,6 +5,7 @@ import type {
   CoreListReviewsParams,
   CoreListReviewsResult,
   CoreRetryReviewResult,
+  CoreMarkReviewReadResult,
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -55,6 +56,7 @@ function buildListReviewsQuery(params: CoreListReviewsParams): string {
   if (params.dateFrom) query.set('dateFrom', params.dateFrom.toISOString());
   if (params.dateTo) query.set('dateTo', params.dateTo.toISOString());
   if (params.sentiment) query.set('sentiment', params.sentiment);
+  if (params.isRead != null) query.set('isRead', String(params.isRead));
   return query.toString();
 }
 
@@ -68,4 +70,8 @@ export async function getReview(id: string): Promise<CoreReviewDetail> {
 
 export async function retryReview(id: string): Promise<CoreRetryReviewResult> {
   return requestJson(`${API_URL}/reviews/${id}/retry`, { method: 'POST' }, 'Falha ao reprocessar avaliação');
+}
+
+export async function markReviewAsRead(id: string): Promise<CoreMarkReviewReadResult> {
+  return requestJson(`${API_URL}/reviews/${id}/read`, { method: 'POST' }, 'Falha ao marcar avaliação como lida');
 }

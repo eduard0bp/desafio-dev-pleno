@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AvaliacoesPage } from './AvaliacoesPage';
+import { SelectedReviewProvider } from '../../context/SelectedReviewContext';
 import { getMockCoreListReviewsResult } from '../../testUtils';
 import * as api from '../../api';
 
@@ -15,7 +16,9 @@ describe('AvaliacoesPage', () => {
     render(
       <MantineProvider>
         <QueryClientProvider client={queryClient}>
-          <AvaliacoesPage />
+          <SelectedReviewProvider>
+            <AvaliacoesPage />
+          </SelectedReviewProvider>
         </QueryClientProvider>
       </MantineProvider>
     );

@@ -10,4 +10,5 @@ export interface CoreListReviewsParams {
   dateFrom?: Date;
   dateTo?: Date;
   sentiment?: CoreReviewSentiment;
+  isRead?: boolean;
 }

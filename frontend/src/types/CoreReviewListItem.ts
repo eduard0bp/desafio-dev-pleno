@@ -9,5 +9,6 @@ export interface CoreReviewListItem {
   comment: string;
   status: CoreReviewStatus;
   analysis: CoreReviewAnalysis | null;
+  is_read: boolean;
   created_at: string;
 }

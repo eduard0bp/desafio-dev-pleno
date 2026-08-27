@@ -4,4 +4,5 @@ export * from './ReviewList/ReviewList';
 export * from './ReviewDetailPanel/ReviewDetailPanel';
 export * from './Sidebar/Sidebar';
 export * from './NotificationBell/NotificationBell';
+export * from './SelectedReviewModal/SelectedReviewModal';
 export * from './TableStateMessage/TableStateMessage';
