@@ -138,16 +138,34 @@ const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', '
 // column in every other row, breaking alignment down the table.
 const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center', minWidth: 0 } as const;
 // Pins the Ações column to the right edge of the horizontally-scrolling
-// table instead of scrolling away with the rest of the row — needs an
-// opaque background (matching the page/card background) so content that
-// has scrolled underneath doesn't show through, and a left border to mark
-// where the sticky column begins once something actually is underneath it.
-const STICKY_ACTIONS_CELL_STYLE = {
-  ...CELL_FLEX_STYLE,
+// table instead of scrolling away with the rest of the row. Plain
+// background-only stickiness for the header cell, which has no card look
+// to preserve.
+const STICKY_ACTIONS_HEADER_STYLE = {
   position: 'sticky',
   right: 0,
   backgroundColor: 'var(--mantine-color-body)',
-  borderLeft: '1px solid var(--mantine-color-default-border)',
+} as const;
+// Each row's Ações cell needs more than a sticky background: the grid's
+// alignItems: center (see the row's own style below) only gives the cell
+// its content's height, not the full row height, so a plain background
+// leaves a gap above/below through which the scrolled-under Status badge
+// shows — alignSelf: stretch fixes that. And since the pinned cell no
+// longer scrolls together with the card's own right border once stuck, it
+// reads as a button floating disconnected from its card unless it draws
+// that edge itself — hence the border and matching right-side radius.
+const STICKY_ACTIONS_ROW_STYLE = {
+  ...CELL_FLEX_STYLE,
+  position: 'sticky',
+  right: 0,
+  alignSelf: 'stretch',
+  justifyContent: 'center',
+  backgroundColor: 'var(--mantine-color-body)',
+  borderTop: '1px solid var(--mantine-color-default-border)',
+  borderRight: '1px solid var(--mantine-color-default-border)',
+  borderBottom: '1px solid var(--mantine-color-default-border)',
+  borderTopRightRadius: 'var(--mantine-radius-md)',
+  borderBottomRightRadius: 'var(--mantine-radius-md)',
 } as const;
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
@@ -357,7 +375,7 @@ export function ReviewList() {
                   fw={600}
                   c="dimmed"
                   ta="left"
-                  style={label === 'Ações' ? STICKY_ACTIONS_CELL_STYLE : undefined}
+                  style={label === 'Ações' ? STICKY_ACTIONS_HEADER_STYLE : undefined}
                 >
                   {label}
                 </Text>
@@ -444,7 +462,7 @@ export function ReviewList() {
                     <Text role="cell" size="sm" c="dimmed" miw={0}>
                       {new Date(review.created_at).toLocaleDateString('pt-BR')}
                     </Text>
-                    <Box role="cell" style={STICKY_ACTIONS_CELL_STYLE}>
+                    <Box role="cell" style={STICKY_ACTIONS_ROW_STYLE}>
                       {review.status === 'failed' ? (
                         <Tooltip label="Reprocessar avaliação com falha">
                           <ActionIcon
