@@ -44,7 +44,6 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
             {data.last_error?.message ?? 'Falha ao processar esta avaliação após todas as tentativas.'}
           </Alert>
           <Button
-            variant="light"
             color="tertiary"
             loading={retryMutation.isPending && retryMutation.variables === reviewId}
             onClick={() => retryMutation.mutate(reviewId)}

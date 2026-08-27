@@ -183,6 +183,22 @@ describe('ReviewList', () => {
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeInTheDocument());
   });
 
+  it('does not query with drawer field edits until "Aplicar filtros" is clicked', async () => {
+    const spy = vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
+    renderList();
+    await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Filtros' });
+
+    const callsBeforeEdit = spy.mock.calls.length;
+    fireEvent.change(within(dialog).getByPlaceholderText('Buscar por empresa...'), { target: { value: 'acme' } });
+    expect(spy.mock.calls.length).toBe(callsBeforeEdit);
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar filtros' }));
+    await waitFor(() => expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'acme' })));
+  });
+
   it('clears field filters via the drawer\'s "Limpar filtros" button, and "Aplicar filtros" closes it', async () => {
     vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
     renderList();

@@ -31,36 +31,52 @@ import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilte
 import type { CoreReviewStatusCounts } from '../../types';
 import classes from './ReviewList.module.css';
 
-type ReviewFilters = ReturnType<typeof useReviewFilters>;
+interface FieldFilterValues {
+  search: string;
+  minRating: number | null;
+  dateFrom: Date | null;
+  dateTo: Date | null;
+}
 
-function FilterFields({ filters }: { filters: ReviewFilters }) {
+interface FieldFilterHandlers {
+  setSearch: (value: string) => void;
+  setMinRating: (value: number | null) => void;
+  setDateFrom: (value: Date | null) => void;
+  setDateTo: (value: Date | null) => void;
+}
+
+// Desktop wires these fields straight to the real filters (applies as you
+// type, matching the existing live behavior). The mobile drawer instead
+// passes a local draft — see draftFilters in ReviewList — so edits only
+// take effect once "Aplicar filtros" is clicked.
+function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange: FieldFilterHandlers }) {
   return (
     <>
       <TextInput
         placeholder="Buscar por empresa..."
-        value={filters.search}
-        onChange={(event) => filters.setSearch(event.currentTarget.value)}
+        value={value.search}
+        onChange={(event) => onChange.setSearch(event.currentTarget.value)}
         w={{ base: '100%', xs: 240 }}
       />
       <Select
         placeholder="Todas as notas"
         data={RATING_OPTIONS}
-        value={filters.minRating != null ? String(filters.minRating) : null}
-        onChange={(value) => filters.setMinRating(value ? Number(value) : null)}
+        value={value.minRating != null ? String(value.minRating) : null}
+        onChange={(v) => onChange.setMinRating(v ? Number(v) : null)}
         w={{ base: '100%', xs: 180 }}
         clearable
       />
       <DatePickerInput
         placeholder="Data inicial"
-        value={filters.dateFrom}
-        onChange={(value) => filters.setDateFrom(value as Date | null)}
+        value={value.dateFrom}
+        onChange={(v) => onChange.setDateFrom(v as Date | null)}
         w={{ base: '100%', xs: 150 }}
         clearable
       />
       <DatePickerInput
         placeholder="Data final"
-        value={filters.dateTo}
-        onChange={(value) => filters.setDateTo(value as Date | null)}
+        value={value.dateTo}
+        onChange={(v) => onChange.setDateTo(v as Date | null)}
         w={{ base: '100%', xs: 150 }}
         clearable
       />
@@ -73,7 +89,11 @@ const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', '
 // Badge/StatusBadge are inline-level elements — wrapped in a plain block Box,
 // their surrounding line-height leaves phantom space that shifts them a few
 // pixels off-center relative to plain <Text> cells. Flex removes that gap.
-const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center' } as const;
+// minWidth: 0 overrides the grid item default of min-width: auto — without
+// it, each row is its own independent grid, and a row whose cell content is
+// wider than its column's fr share pushes that track wider than the same
+// column in every other row, breaking alignment down the table.
+const CELL_FLEX_STYLE = { display: 'flex', alignItems: 'center', minWidth: 0 } as const;
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -97,9 +117,44 @@ const PAGE_SIZE = 10;
 
 export function ReviewList() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filtersOpened, { open: openFilters, close: closeFilters }] = useDisclosure(false);
+  const [filtersOpened, { open: openFiltersDisclosure, close: closeFilters }] = useDisclosure(false);
   const filters = useReviewFilters();
   const retryMutation = useRetryReviewMutation();
+
+  // The mobile drawer edits this draft instead of the real filters, so
+  // typing/picking values doesn't trigger a request until the user taps
+  // "Aplicar filtros". Re-seeded from the applied filters every time the
+  // drawer opens, so a close-without-applying discards unsaved edits.
+  const [draftFilters, setDraftFilters] = useState<FieldFilterValues>({
+    search: filters.search,
+    minRating: filters.minRating,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+  });
+
+  function openFilters() {
+    setDraftFilters({
+      search: filters.search,
+      minRating: filters.minRating,
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+    openFiltersDisclosure();
+  }
+
+  function applyDraftFilters() {
+    filters.setSearch(draftFilters.search);
+    filters.setMinRating(draftFilters.minRating);
+    filters.setDateFrom(draftFilters.dateFrom);
+    filters.setDateTo(draftFilters.dateTo);
+    closeFilters();
+  }
+
+  function clearDraftFilters() {
+    const empty: FieldFilterValues = { search: '', minRating: null, dateFrom: null, dateTo: null };
+    setDraftFilters(empty);
+    filters.clearFieldFilters();
+  }
 
   const { data, isLoading, isError, error } = useReviewsQuery({
     page: filters.page,
@@ -167,18 +222,12 @@ export function ReviewList() {
         </Group>
       </Chip.Group>
 
-      <Button
-        hiddenFrom="sm"
-        variant="light"
-        color="tertiary"
-        leftSection={<IconFilter size={16} />}
-        onClick={openFilters}
-      >
+      <Button hiddenFrom="sm" color="tertiary" leftSection={<IconFilter size={16} />} onClick={openFilters}>
         Filtros{activeFieldFilterCount > 0 ? ` (${activeFieldFilterCount})` : ''}
       </Button>
 
       <Group gap="sm" wrap="wrap" visibleFrom="sm">
-        <FilterFields filters={filters} />
+        <FilterFields value={filters} onChange={filters} />
       </Group>
 
       <Drawer
@@ -190,12 +239,20 @@ export function ReviewList() {
         styles={{ content: { height: 'auto' } }}
       >
         <Stack gap="sm">
-          <FilterFields filters={filters} />
+          <FilterFields
+            value={draftFilters}
+            onChange={{
+              setSearch: (value) => setDraftFilters((draft) => ({ ...draft, search: value })),
+              setMinRating: (value) => setDraftFilters((draft) => ({ ...draft, minRating: value })),
+              setDateFrom: (value) => setDraftFilters((draft) => ({ ...draft, dateFrom: value })),
+              setDateTo: (value) => setDraftFilters((draft) => ({ ...draft, dateTo: value })),
+            }}
+          />
           <Group gap="sm" grow>
-            <Button variant="default" onClick={filters.clearFieldFilters}>
+            <Button variant="default" onClick={clearDraftFilters}>
               Limpar filtros
             </Button>
-            <Button color="tertiary" onClick={closeFilters}>
+            <Button color="tertiary" onClick={applyDraftFilters}>
               Aplicar filtros
             </Button>
           </Group>
@@ -211,7 +268,7 @@ export function ReviewList() {
               style={{ display: 'grid', gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gap: 'var(--mantine-spacing-sm)' }}
             >
               {COLUMN_LABELS.map((label) => (
-                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed">
+                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed" miw={0}>
                   {label}
                 </Text>
               ))}
@@ -294,14 +351,13 @@ export function ReviewList() {
                         </Text>
                       )}
                     </Box>
-                    <Text role="cell" size="sm" c="dimmed">
+                    <Text role="cell" size="sm" c="dimmed" miw={0}>
                       {new Date(review.created_at).toLocaleDateString('pt-BR')}
                     </Text>
                     <Box role="cell" style={CELL_FLEX_STYLE}>
                       {review.status === 'failed' ? (
                         <Button
                           size="xs"
-                          variant="light"
                           color="tertiary"
                           loading={retryMutation.isPending && retryMutation.variables === review.id}
                           onClick={(event) => {
