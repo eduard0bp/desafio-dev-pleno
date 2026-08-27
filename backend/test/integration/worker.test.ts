@@ -44,6 +44,40 @@ describe('processReviewJob', () => {
     expect(updated.attempts).toBe(1);
   });
 
+  it('logs a negative_review_detected alert when the analysis comes back negative', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const review = await createTestReview();
+    mockedAnalyzeReview.mockResolvedValueOnce({
+      request_id: 'r1',
+      review_id: review.externalId,
+      analysis: { sentiment: 'negative', category: 'delivery', confidence: 0.9, matched_keywords: ['bad'] },
+      processing_time_ms: 100,
+      processed_at: new Date().toISOString(),
+    });
+
+    await processReviewJob({ data: { reviewId: review.id }, attemptsMade: 0 });
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('negative_review_detected'));
+    warnSpy.mockRestore();
+  });
+
+  it('does not log a negative_review_detected alert for a positive analysis', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const review = await createTestReview();
+    mockedAnalyzeReview.mockResolvedValueOnce({
+      request_id: 'r1',
+      review_id: review.externalId,
+      analysis: { sentiment: 'positive', category: 'delivery', confidence: 0.9, matched_keywords: [] },
+      processing_time_ms: 100,
+      processed_at: new Date().toISOString(),
+    });
+
+    await processReviewJob({ data: { reviewId: review.id }, attemptsMade: 0 });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   it('marks the review as failed and does not allow retry on a non-retryable error', async () => {
     const review = await createTestReview();
     mockedAnalyzeReview.mockRejectedValueOnce(new NonRetryableAnalysisError('invalid', 'VALIDATION_ERROR'));

@@ -6,6 +6,8 @@ import { prisma } from './lib/prisma';
 import { analyzeReview, RetryableAnalysisError, NonRetryableAnalysisError } from './services/analysisClient';
 import { computeBackoffDelayMs } from './lib/retry';
 import { startReconciliationLoop } from './services/reconciliationService';
+import { alertNegativeReview } from './services/alertService';
+import { log } from './lib/logger';
 
 type JobLike = { data: ReviewJobData; attemptsMade: number };
 
@@ -15,6 +17,12 @@ export async function processReviewJob(job: JobLike): Promise<void> {
   await prisma.review.update({
     where: { id: review.id },
     data: { status: 'processing', attempts: { increment: 1 } },
+  });
+
+  log('info', 'review_processing_started', {
+    reviewId: review.id,
+    externalId: review.externalId,
+    attempt: review.attempts + 1,
   });
 
   try {
@@ -30,11 +38,36 @@ export async function processReviewJob(job: JobLike): Promise<void> {
       where: { id: review.id },
       data: { status: 'completed', analysis: result.analysis, processedAt: new Date() },
     });
+
+    log('info', 'review_processing_completed', {
+      reviewId: review.id,
+      externalId: review.externalId,
+      sentiment: result.analysis.sentiment,
+      category: result.analysis.category,
+    });
+
+    if (result.analysis.sentiment === 'negative') {
+      alertNegativeReview({
+        reviewId: review.id,
+        externalId: review.externalId,
+        companyId: review.companyId,
+        rating: review.rating,
+        sentiment: result.analysis.sentiment,
+        category: result.analysis.category,
+        confidence: result.analysis.confidence,
+      });
+    }
   } catch (err) {
     if (err instanceof NonRetryableAnalysisError) {
       await prisma.review.update({
         where: { id: review.id },
         data: { status: 'failed', lastError: { code: err.code, message: err.message } },
+      });
+      log('warn', 'review_processing_failed_permanently', {
+        reviewId: review.id,
+        externalId: review.externalId,
+        code: err.code,
+        message: err.message,
       });
       throw new UnrecoverableError(err.message);
     }
@@ -43,6 +76,11 @@ export async function processReviewJob(job: JobLike): Promise<void> {
       await prisma.review.update({
         where: { id: review.id },
         data: { lastError: { message: err.message } },
+      });
+      log('warn', 'review_processing_retry_scheduled', {
+        reviewId: review.id,
+        externalId: review.externalId,
+        message: err.message,
       });
     }
 
@@ -71,7 +109,19 @@ export function startWorker(): Worker<ReviewJobData> {
     if (job.attemptsMade >= maxAttempts) {
       await prisma.review
         .update({ where: { id: job.data.reviewId }, data: { status: 'failed', lastError: { message: err.message } } })
-        .catch((updateErr) => console.error('Failed to mark review as failed', updateErr));
+        .then(() =>
+          log('warn', 'review_processing_attempts_exhausted', {
+            reviewId: job.data.reviewId,
+            attemptsMade: job.attemptsMade,
+            message: err.message,
+          })
+        )
+        .catch((updateErr) =>
+          log('error', 'review_mark_failed_error', {
+            reviewId: job.data.reviewId,
+            message: updateErr instanceof Error ? updateErr.message : String(updateErr),
+          })
+        );
     }
   });
 
@@ -81,5 +131,5 @@ export function startWorker(): Worker<ReviewJobData> {
 if (process.env.NODE_ENV !== 'test') {
   startWorker();
   startReconciliationLoop();
-  console.log('Review processing worker started');
+  log('info', 'worker_started');
 }

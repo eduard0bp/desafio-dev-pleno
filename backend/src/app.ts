@@ -3,6 +3,7 @@ import cors from 'cors';
 import { randomUUID } from 'node:crypto';
 import { reviewsRouter } from './routes/reviews';
 import { checkHealth } from './services/healthService';
+import { log } from './lib/logger';
 
 export function createApp() {
   const app = express();
@@ -10,6 +11,23 @@ export function createApp() {
 
   app.use((req, _res, next) => {
     req.requestId = randomUUID();
+    next();
+  });
+
+  // Skips /health on purpose — Docker's healthcheck hits it every few
+  // seconds, and it carries no request_id worth correlating.
+  app.use((req, res, next) => {
+    if (req.path === '/health') return next();
+    const start = Date.now();
+    res.on('finish', () => {
+      log(res.statusCode >= 500 ? 'error' : 'info', 'http_request', {
+        request_id: req.requestId,
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        duration_ms: Date.now() - start,
+      });
+    });
     next();
   });
 
@@ -44,7 +62,11 @@ export function createApp() {
       });
     }
 
-    console.error(err);
+    log('error', 'unhandled_error', {
+      request_id: requestId,
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
     res.status(500).json({
       error: { code: 'INTERNAL_ERROR', message: 'Erro interno', retryable: false },
       request_id: requestId,
