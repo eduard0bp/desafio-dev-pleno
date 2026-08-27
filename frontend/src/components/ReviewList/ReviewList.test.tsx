@@ -160,7 +160,7 @@ describe('ReviewList', () => {
     renderList();
     await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument());
 
-    const buttons = screen.getAllByRole('button', { name: 'Reprocessar' });
+    const buttons = screen.getAllByRole('button', { name: 'Reprocessar avaliação' });
     expect(buttons).toHaveLength(1);
 
     fireEvent.click(buttons[0]);

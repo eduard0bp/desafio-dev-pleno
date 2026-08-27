@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  ActionIcon,
   Badge,
   Box,
   Button,
@@ -21,7 +22,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { DatePickerInput } from '@mantine/dates';
-import { IconAlertTriangle, IconFilter, IconFilterOff, IconInbox } from '@tabler/icons-react';
+import { IconAlertTriangle, IconFilter, IconFilterOff, IconInbox, IconRefresh } from '@tabler/icons-react';
 import { useReviewsQuery, useRetryReviewMutation } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
@@ -356,17 +357,18 @@ export function ReviewList() {
                     </Text>
                     <Box role="cell" style={CELL_FLEX_STYLE}>
                       {review.status === 'failed' ? (
-                        <Button
-                          size="xs"
+                        <ActionIcon
+                          variant="filled"
                           color="tertiary"
+                          aria-label="Reprocessar avaliação"
                           loading={retryMutation.isPending && retryMutation.variables === review.id}
                           onClick={(event) => {
                             event.stopPropagation();
                             retryMutation.mutate(review.id);
                           }}
                         >
-                          Reprocessar
-                        </Button>
+                          <IconRefresh size={16} />
+                        </ActionIcon>
                       ) : (
                         <Text c="dimmed" size="sm">
                           —
