@@ -130,6 +130,29 @@ describe('Reviews API', () => {
     expect(response.body.error.code).toBe('VALIDATION_ERROR');
   });
 
+  it('GET /reviews defaults new reviews to is_read: false and filters by isRead via query param', async () => {
+    const marker = randomUUID();
+    const created = await request(app).post('/reviews').send({
+      external_id: `test-${marker}`, company_id: `ReadCo-${marker}`, rating: 1, comment: 'ruim',
+    });
+    expect(created.body).toMatchObject({ external_id: `test-${marker}` });
+
+    const beforeRead = await request(app).get('/reviews').query({ search: `readco-${marker}`, isRead: 'false' });
+    expect(beforeRead.body.data).toHaveLength(1);
+    expect(beforeRead.body.data[0].is_read).toBe(false);
+
+    await prisma.review.update({ where: { id: created.body.id }, data: { isRead: true } });
+
+    const afterRead = await request(app).get('/reviews').query({ search: `readco-${marker}`, isRead: 'false' });
+    expect(afterRead.body.data).toHaveLength(0);
+  });
+
+  it('GET /reviews with an invalid isRead query param returns 400', async () => {
+    const response = await request(app).get('/reviews').query({ isRead: 'maybe' });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('GET /reviews paginates via page/pageSize query params', async () => {
     const marker = randomUUID();
     for (let i = 0; i < 3; i += 1) {
@@ -245,5 +268,24 @@ describe('Reviews API', () => {
 
     const job = await reviewQueue.getJob(created.body.id);
     expect(job).not.toBeUndefined();
+  });
+
+  it('POST /reviews/:id/read returns 404 for a nonexistent id', async () => {
+    const response = await request(app).post(`/reviews/${randomUUID()}/read`);
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('POST /reviews/:id/read marks the review as read', async () => {
+    const created = await request(app).post('/reviews').send({
+      external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 1, comment: 'ruim',
+    });
+
+    const response = await request(app).post(`/reviews/${created.body.id}/read`);
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ id: created.body.id, is_read: true });
+
+    const updated = await prisma.review.findUniqueOrThrow({ where: { id: created.body.id } });
+    expect(updated.isRead).toBe(true);
   });
 });

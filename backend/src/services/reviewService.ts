@@ -38,6 +38,7 @@ export interface ListReviewsFilters {
   dateFrom?: Date;
   dateTo?: Date;
   sentiment?: 'positive' | 'neutral' | 'negative';
+  isRead?: boolean;
 }
 
 export interface ListReviewsResult {
@@ -67,6 +68,7 @@ function buildBaseWhere(filters: ListReviewsFilters): Prisma.ReviewWhereInput {
     // analysis only exists once a review completes, so filtering by
     // sentiment naturally excludes pending/processing/failed reviews.
     ...(filters.sentiment ? { analysis: { path: ['sentiment'], equals: filters.sentiment } } : {}),
+    ...(filters.isRead != null ? { isRead: filters.isRead } : {}),
   };
 }
 
@@ -119,4 +121,8 @@ export async function retryReview(id: string): Promise<Review> {
     where: { id },
     data: { status: 'pending', lastError: Prisma.JsonNull, attempts: 0, processedAt: null },
   });
+}
+
+export async function markReviewAsRead(id: string): Promise<Review> {
+  return prisma.review.update({ where: { id }, data: { isRead: true } });
 }

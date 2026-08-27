@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
 import { createReviewSchema, listReviewsQuerySchema } from '../validation';
-import { createReview, listReviews, getReviewById, retryReview } from '../services/reviewService';
+import { createReview, listReviews, getReviewById, retryReview, markReviewAsRead } from '../services/reviewService';
 import { enqueueReviewJob, removeReviewJob } from '../queue/reviewQueue';
 import type { Review } from '@prisma/client';
 import type { Request } from 'express';
@@ -107,6 +107,20 @@ reviewsRouter.post('/reviews/:id/retry', async (req, res, next) => {
   }
 });
 
+reviewsRouter.post('/reviews/:id/read', async (req, res, next) => {
+  try {
+    const review = await getReviewById(req.params.id);
+    if (!review) {
+      return res.status(404).json(errorResponse(req, 'NOT_FOUND', 'Review não encontrada'));
+    }
+
+    const updated = await markReviewAsRead(review.id);
+    res.json({ id: updated.id, is_read: updated.isRead });
+  } catch (err) {
+    next(err);
+  }
+});
+
 function toListItem(review: Review): CoreReviewListItem {
   return {
     id: review.id,
@@ -116,6 +130,7 @@ function toListItem(review: Review): CoreReviewListItem {
     comment: review.comment,
     status: review.status as CoreReviewListItem['status'],
     analysis: review.analysis as CoreReviewListItem['analysis'],
+    is_read: review.isRead,
     created_at: review.createdAt,
   };
 }

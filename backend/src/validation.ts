@@ -44,6 +44,12 @@ export const listReviewsQuerySchema = z.object({
   dateFrom: z.coerce.date('Data inicial inválida').optional(),
   dateTo: z.coerce.date('Data final inválida').optional(),
   sentiment: z.enum(['positive', 'neutral', 'negative'], 'Sentimento inválido').optional(),
+  // z.coerce.boolean() would treat the string "false" as truthy, so the
+  // allowed values are enumerated and mapped explicitly instead.
+  isRead: z
+    .enum(['true', 'false'], 'isRead inválido')
+    .transform((value) => value === 'true')
+    .optional(),
 });
 
 export type ListReviewsQuery = z.infer<typeof listReviewsQuerySchema>;

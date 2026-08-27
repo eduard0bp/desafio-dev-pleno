@@ -15,6 +15,7 @@ model Review {
   comment     String
   status      ReviewStatus @default(pending)
   analysis    Json?
+  isRead      Boolean      @default(false) @map("is_read")
   attempts    Int          @default(0)
   lastError   Json?        @map("last_error")
   createdAt   DateTime     @default(now()) @map("created_at")
