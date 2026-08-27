@@ -5,6 +5,7 @@ import {
   Button,
   Center,
   Chip,
+  Drawer,
   Flex,
   Group,
   Loader,
@@ -18,8 +19,9 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { DatePickerInput } from '@mantine/dates';
-import { IconAlertTriangle, IconFilterOff, IconInbox } from '@tabler/icons-react';
+import { IconAlertTriangle, IconFilter, IconFilterOff, IconInbox } from '@tabler/icons-react';
 import { useReviewsQuery, useRetryReviewMutation } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
@@ -28,6 +30,43 @@ import { TableStateMessage } from '../TableStateMessage/TableStateMessage';
 import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilters';
 import type { CoreReviewStatusCounts } from '../../types';
 import classes from './ReviewList.module.css';
+
+type ReviewFilters = ReturnType<typeof useReviewFilters>;
+
+function FilterFields({ filters }: { filters: ReviewFilters }) {
+  return (
+    <>
+      <TextInput
+        placeholder="Buscar por empresa..."
+        value={filters.search}
+        onChange={(event) => filters.setSearch(event.currentTarget.value)}
+        w={{ base: '100%', xs: 240 }}
+      />
+      <Select
+        placeholder="Todas as notas"
+        data={RATING_OPTIONS}
+        value={filters.minRating != null ? String(filters.minRating) : null}
+        onChange={(value) => filters.setMinRating(value ? Number(value) : null)}
+        w={{ base: '100%', xs: 180 }}
+        clearable
+      />
+      <DatePickerInput
+        placeholder="Data inicial"
+        value={filters.dateFrom}
+        onChange={(value) => filters.setDateFrom(value as Date | null)}
+        w={{ base: '100%', xs: 150 }}
+        clearable
+      />
+      <DatePickerInput
+        placeholder="Data final"
+        value={filters.dateTo}
+        onChange={(value) => filters.setDateTo(value as Date | null)}
+        w={{ base: '100%', xs: 150 }}
+        clearable
+      />
+    </>
+  );
+}
 
 const GRID_TEMPLATE_COLUMNS = '2fr 1.3fr 1fr 1fr 1fr 1fr 1fr';
 const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data', 'Ações'];
@@ -58,6 +97,7 @@ const PAGE_SIZE = 10;
 
 export function ReviewList() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filtersOpened, { open: openFilters, close: closeFilters }] = useDisclosure(false);
   const filters = useReviewFilters();
   const retryMutation = useRetryReviewMutation();
 
@@ -90,6 +130,13 @@ export function ReviewList() {
     filters.dateFrom != null ||
     filters.dateTo != null;
 
+  const activeFieldFilterCount = [
+    filters.debouncedSearch !== '',
+    filters.minRating != null,
+    filters.dateFrom != null,
+    filters.dateTo != null,
+  ].filter(Boolean).length;
+
   const emptyStateMessage = hasActiveFilters
     ? 'Nenhuma avaliação encontrada para os filtros selecionados.'
     : 'Nenhuma avaliação cadastrada ainda.';
@@ -120,36 +167,25 @@ export function ReviewList() {
         </Group>
       </Chip.Group>
 
-      <Group gap="sm" wrap="wrap">
-        <TextInput
-          placeholder="Buscar por empresa..."
-          value={filters.search}
-          onChange={(event) => filters.setSearch(event.currentTarget.value)}
-          w={{ base: '100%', xs: 240 }}
-        />
-        <Select
-          placeholder="Todas as notas"
-          data={RATING_OPTIONS}
-          value={filters.minRating != null ? String(filters.minRating) : null}
-          onChange={(value) => filters.setMinRating(value ? Number(value) : null)}
-          w={{ base: '100%', xs: 180 }}
-          clearable
-        />
-        <DatePickerInput
-          placeholder="Data inicial"
-          value={filters.dateFrom}
-          onChange={(value) => filters.setDateFrom(value as Date | null)}
-          w={{ base: '100%', xs: 150 }}
-          clearable
-        />
-        <DatePickerInput
-          placeholder="Data final"
-          value={filters.dateTo}
-          onChange={(value) => filters.setDateTo(value as Date | null)}
-          w={{ base: '100%', xs: 150 }}
-          clearable
-        />
+      <Button
+        hiddenFrom="sm"
+        variant="light"
+        color="primary"
+        leftSection={<IconFilter size={16} />}
+        onClick={openFilters}
+      >
+        Filtros{activeFieldFilterCount > 0 ? ` (${activeFieldFilterCount})` : ''}
+      </Button>
+
+      <Group gap="sm" wrap="wrap" visibleFrom="sm">
+        <FilterFields filters={filters} />
       </Group>
+
+      <Drawer opened={filtersOpened} onClose={closeFilters} position="top" title="Filtros" hiddenFrom="sm">
+        <Stack gap="sm">
+          <FilterFields filters={filters} />
+        </Stack>
+      </Drawer>
 
       <Box style={{ overflowX: 'auto' }}>
         <Box role="table" miw={640} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)' }}>

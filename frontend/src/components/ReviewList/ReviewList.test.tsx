@@ -168,4 +168,18 @@ describe('ReviewList', () => {
     await waitFor(() => expect(retrySpy).toHaveBeenCalledWith('fail-1'));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('shows an active-filter count on the mobile Filtros button and opens the drawer on click', async () => {
+    vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
+    renderList();
+    await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
+
+    expect(screen.getByRole('button', { name: 'Filtros' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por empresa...'), { target: { value: 'acme' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filtros (1)' })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros (1)' }));
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeInTheDocument());
+  });
 });
