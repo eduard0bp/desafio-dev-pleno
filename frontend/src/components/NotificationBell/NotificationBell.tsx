@@ -51,14 +51,19 @@ export function NotificationBell() {
             <Stack gap={0}>
               {reviews.map((review) => (
                 <UnstyledButton key={review.id} className={classes.item} onClick={() => handleSelect(review.id)}>
-                  <Group justify="space-between" gap="xs" wrap="nowrap" px="sm" py={6}>
-                    <Text size="sm" fw={500} truncate="end">
-                      {review.company_id}
+                  <Stack gap={2} px="sm" py={6}>
+                    <Group justify="space-between" gap="xs" wrap="nowrap">
+                      <Text size="sm" fw={500} truncate="end">
+                        {review.company_id}
+                      </Text>
+                      <Badge color="red" size="xs">
+                        Negativo
+                      </Badge>
+                    </Group>
+                    <Text size="xs" c="dimmed" truncate="end">
+                      {review.comment}
                     </Text>
-                    <Badge color="red" size="xs">
-                      Negativo
-                    </Badge>
-                  </Group>
+                  </Stack>
                 </UnstyledButton>
               ))}
             </Stack>

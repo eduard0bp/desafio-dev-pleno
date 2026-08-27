@@ -203,6 +203,23 @@ describe('ReviewList', () => {
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeInTheDocument());
   });
 
+  it('shows a "Limpar filtros" button on desktop only while a filter is active, clearing it live', async () => {
+    const spy = vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
+    renderList();
+    await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
+
+    expect(screen.queryByRole('button', { name: 'Limpar filtros' })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por empresa...'), { target: { value: 'acme' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Limpar filtros' })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Limpar filtros' })).not.toBeInTheDocument());
+    expect(screen.getByPlaceholderText('Buscar por empresa...')).toHaveValue('');
+    await waitFor(() => expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ search: undefined })));
+  });
+
   it('does not query with drawer field edits until "Aplicar filtros" is clicked', async () => {
     const spy = vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
     renderList();

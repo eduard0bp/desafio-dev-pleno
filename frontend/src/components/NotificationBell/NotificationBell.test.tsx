@@ -56,6 +56,7 @@ describe('NotificationBell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Avaliações negativas' }));
 
     await waitFor(() => expect(screen.getByText('Padaria Trigo Dourado')).toBeInTheDocument());
+    expect(screen.getByText('Comida chegou fria.')).toBeInTheDocument();
   });
 
   it('opens the review detail modal and marks the review as read when a notification is clicked', async () => {

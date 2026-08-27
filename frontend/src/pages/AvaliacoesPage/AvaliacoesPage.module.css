@@ -1,0 +1,8 @@
+/* The mobile header bar is shorter than the open space used on desktop,
+   so the bell needs less top offset there to stay vertically centered
+   next to the logo instead of sitting low with extra top margin. */
+@media (min-width: 48em) {
+  .bellOffset {
+    margin-top: 8px;
+  }
+}

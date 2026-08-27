@@ -267,6 +267,11 @@ export function ReviewList() {
 
       <Group gap="sm" wrap="wrap" visibleFrom="sm">
         <FilterFields value={filters} onChange={filters} />
+        {activeFieldFilterCount > 0 && (
+          <Button variant="default" onClick={filters.clearFieldFilters}>
+            Limpar filtros
+          </Button>
+        )}
       </Group>
 
       <Drawer
@@ -308,7 +313,7 @@ export function ReviewList() {
               style={{ display: 'grid', gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gap: 'var(--mantine-spacing-sm)' }}
             >
               {COLUMN_LABELS.map((label) => (
-                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed" miw={0}>
+                <Text key={label} role="columnheader" size="sm" fw={600} c="dimmed" miw={0} truncate="end">
                   {label}
                 </Text>
               ))}
@@ -384,7 +389,9 @@ export function ReviewList() {
                     </Box>
                     <Box role="cell" style={CELL_FLEX_STYLE}>
                       {category ? (
-                        <Text size="sm">{category}</Text>
+                        <Text size="sm" truncate="end">
+                          {category}
+                        </Text>
                       ) : (
                         <Text c="dimmed" size="sm">
                           —
