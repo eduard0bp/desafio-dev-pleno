@@ -48,12 +48,18 @@ interface FieldFilterHandlers {
   setSentiment: (value: CoreReviewSentiment | null) => void;
 }
 
-// DatePickerInput's onChange hands back an ISO date string (not a Date), so
-// filter state — and the .toISOString() call in buildListReviewsQuery — needs
-// a real Date instance instead.
+// DatePickerInput's onChange hands back a date-only ISO string (not a
+// Date), so filter state — and the .toISOString() call in
+// buildListReviewsQuery — needs a real Date instance instead. Building it
+// from the string's year/month/day (local time) rather than
+// `new Date(value)` matters: the latter parses a date-only string as UTC
+// midnight, which rolls back to the previous day once formatted in any
+// timezone behind UTC (e.g. selecting the 26th would display the 25th).
 function toDateOrNull(value: DateValue): Date | null {
   if (!value) return null;
-  return value instanceof Date ? value : new Date(value);
+  if (value instanceof Date) return value;
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 // Desktop wires these fields straight to the real filters (applies as you
@@ -79,6 +85,7 @@ function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange:
       />
       <DatePickerInput
         placeholder="Data inicial"
+        valueFormat="DD/MM/YYYY"
         value={value.dateFrom}
         onChange={(v) => onChange.setDateFrom(toDateOrNull(v))}
         w={{ base: '100%', xs: 150 }}
@@ -86,6 +93,7 @@ function FilterFields({ value, onChange }: { value: FieldFilterValues; onChange:
       />
       <DatePickerInput
         placeholder="Data final"
+        valueFormat="DD/MM/YYYY"
         value={value.dateTo}
         onChange={(v) => onChange.setDateTo(toDateOrNull(v))}
         w={{ base: '100%', xs: 150 }}

@@ -34,7 +34,7 @@ export function NotificationBell() {
   return (
     <Popover opened={opened} onClose={close} width={320} position="bottom-end" withArrow shadow="md">
       <Popover.Target>
-        <Indicator label={count > 9 ? '9+' : count} color="red" size={16} offset={4} disabled={count === 0}>
+        <Indicator label={count > 99 ? '99+' : count} color="red" size={18} offset={4} disabled={count === 0}>
           <ActionIcon
             variant="filled"
             color="tertiary"

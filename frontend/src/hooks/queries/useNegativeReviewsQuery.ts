@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listReviews } from '../../api';
 
 const NEGATIVE_REVIEWS_PAGE_SIZE = 5;
-const NEGATIVE_REVIEWS_POLL_INTERVAL_MS = 30000;
+const NEGATIVE_REVIEWS_POLL_INTERVAL_MS = 5000;
 
 export function useNegativeReviewsQuery() {
   return useQuery({
