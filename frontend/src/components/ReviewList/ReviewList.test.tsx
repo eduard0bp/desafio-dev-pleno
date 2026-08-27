@@ -148,4 +148,24 @@ describe('ReviewList', () => {
     await waitFor(() => expect(screen.getByText('Empresa 11')).toBeInTheDocument());
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
   });
+
+  it('shows a retry button only for a failed review, and clicking it retries without opening the modal', async () => {
+    const reviews = [
+      getMockCoreReviewListItem({ id: 'ok-1', company_id: 'Acme', status: 'completed' }),
+      getMockCoreReviewListItem({ id: 'fail-1', company_id: 'Globex', status: 'failed' }),
+    ];
+    vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
+    const retrySpy = vi.spyOn(api, 'retryReview').mockResolvedValue({ id: 'fail-1', external_id: 'x', status: 'pending' });
+
+    renderList();
+    await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument());
+
+    const buttons = screen.getAllByRole('button', { name: 'Reprocessar' });
+    expect(buttons).toHaveLength(1);
+
+    fireEvent.click(buttons[0]);
+
+    await waitFor(() => expect(retrySpy).toHaveBeenCalledWith('fail-1'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

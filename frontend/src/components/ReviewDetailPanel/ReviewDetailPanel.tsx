@@ -5,7 +5,7 @@ import { StatusBadge } from '../StatusBadge/StatusBadge';
 
 export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
   const { data, isLoading, isError, error } = useReviewQuery(reviewId);
-  const retryMutation = useRetryReviewMutation(reviewId);
+  const retryMutation = useRetryReviewMutation();
 
   if (isLoading) {
     return (
@@ -46,8 +46,8 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
           <Button
             variant="light"
             color="tertiary"
-            loading={retryMutation.isPending}
-            onClick={() => retryMutation.mutate()}
+            loading={retryMutation.isPending && retryMutation.variables === reviewId}
+            onClick={() => retryMutation.mutate(reviewId)}
           >
             Reprocessar avaliação
           </Button>

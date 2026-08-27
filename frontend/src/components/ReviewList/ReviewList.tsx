@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Badge,
   Box,
+  Button,
   Center,
   Chip,
   Flex,
@@ -19,7 +20,7 @@ import {
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { IconAlertTriangle, IconFilterOff, IconInbox } from '@tabler/icons-react';
-import { useReviewsQuery } from '../../hooks';
+import { useReviewsQuery, useRetryReviewMutation } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
 import { ReviewDetailPanel } from '../ReviewDetailPanel/ReviewDetailPanel';
@@ -28,8 +29,8 @@ import { useReviewFilters, type StatusFilterValue } from './hooks/useReviewFilte
 import type { CoreReviewStatusCounts } from '../../types';
 import classes from './ReviewList.module.css';
 
-const GRID_TEMPLATE_COLUMNS = '2fr 1.3fr 1fr 1fr 1fr 1fr';
-const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data'];
+const GRID_TEMPLATE_COLUMNS = '2fr 1.3fr 1fr 1fr 1fr 1fr 1fr';
+const COLUMN_LABELS = ['Empresa', 'Nota', 'Status', 'Sentimento', 'Categoria', 'Data', 'Ações'];
 // Badge/StatusBadge are inline-level elements — wrapped in a plain block Box,
 // their surrounding line-height leaves phantom space that shifts them a few
 // pixels off-center relative to plain <Text> cells. Flex removes that gap.
@@ -58,6 +59,7 @@ const PAGE_SIZE = 10;
 export function ReviewList() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const filters = useReviewFilters();
+  const retryMutation = useRetryReviewMutation();
 
   const { data, isLoading, isError, error } = useReviewsQuery({
     page: filters.page,
@@ -244,6 +246,26 @@ export function ReviewList() {
                     <Text role="cell" size="sm" c="dimmed">
                       {new Date(review.created_at).toLocaleDateString('pt-BR')}
                     </Text>
+                    <Box role="cell" style={CELL_FLEX_STYLE}>
+                      {review.status === 'failed' ? (
+                        <Button
+                          size="xs"
+                          variant="light"
+                          color="tertiary"
+                          loading={retryMutation.isPending && retryMutation.variables === review.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            retryMutation.mutate(review.id);
+                          }}
+                        >
+                          Reprocessar
+                        </Button>
+                      ) : (
+                        <Text c="dimmed" size="sm">
+                          —
+                        </Text>
+                      )}
+                    </Box>
                   </Paper>
                 );
               })
