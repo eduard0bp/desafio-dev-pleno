@@ -28,6 +28,21 @@ Para desenvolvimento local sem Docker (backend e frontend rodando fora de
 container, mas dependendo de Postgres/Redis/mock-api), veja
 [`backend/README.md`](backend/README.md) e [`frontend/README.md`](frontend/README.md).
 
+### Popular o banco com dados de teste
+
+Com a stack no ar, `scripts/seed-reviews.sh` cria um lote de avaliações via
+`POST /reviews` — a maioria segue o fluxo normal (sujeita às falhas
+periódicas naturais da API fake, que o worker tenta recuperar sozinho), e
+algumas são forçadas a falhar permanentemente (`x-mock-scenario:
+server-error`, esgotando as 5 tentativas), úteis para testar o botão de
+reprocessar, o alerta de avaliação negativa e os estados de erro na UI.
+
+```bash
+./scripts/seed-reviews.sh
+# ou, para customizar:
+COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
+```
+
 ## Decisões técnicas
 
 - **Idempotência:** `external_id` é a chave única de deduplicação no banco
