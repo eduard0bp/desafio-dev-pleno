@@ -24,7 +24,9 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
       </Group>
       <Rating value={data.rating} color="tertiary" size="sm" readOnly />
       <ScrollArea.Autosize mah={{ base: 150, sm: 220 }} type="auto" offsetScrollbars>
-        <Text style={{ whiteSpace: 'pre-wrap' }}>{data.comment}</Text>
+        <Text style={{ whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+          {data.comment}
+        </Text>
       </ScrollArea.Autosize>
       {data.analysis && (
         <Group gap="xs">
