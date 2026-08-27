@@ -22,7 +22,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { DatePickerInput, type DateValue } from '@mantine/dates';
-import { IconAlertTriangle, IconFilter, IconFilterOff, IconInbox, IconRefresh } from '@tabler/icons-react';
+import { IconAlertTriangle, IconEye, IconFilter, IconFilterOff, IconInbox, IconRefresh } from '@tabler/icons-react';
 import { useReviewsQuery, useRetryReviewMutation } from '../../hooks';
 import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
 import { StatusBadge } from '../StatusBadge/StatusBadge';
@@ -438,6 +438,20 @@ export function ReviewList() {
                             }}
                           >
                             <IconRefresh size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                      ) : review.status === 'completed' ? (
+                        <Tooltip label="Ver detalhes da avaliação">
+                          <ActionIcon
+                            variant="filled"
+                            color="tertiary"
+                            aria-label="Ver detalhes da avaliação"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openReview(review.id);
+                            }}
+                          >
+                            <IconEye size={16} />
                           </ActionIcon>
                         </Tooltip>
                       ) : (

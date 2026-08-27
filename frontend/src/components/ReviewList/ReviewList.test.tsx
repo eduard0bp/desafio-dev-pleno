@@ -189,6 +189,26 @@ describe('ReviewList', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('shows a view-details button only for a completed review, and clicking it opens the modal', async () => {
+    const reviews = [
+      getMockCoreReviewListItem({ id: 'ok-1', company_id: 'Acme', status: 'completed' }),
+      getMockCoreReviewListItem({ id: 'pending-1', company_id: 'Globex', status: 'pending' }),
+    ];
+    vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
+    vi.spyOn(api, 'getReview').mockResolvedValue(getMockCoreReviewDetail({ company_id: 'Acme' }));
+
+    renderList();
+    await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument());
+
+    const buttons = screen.getAllByRole('button', { name: 'Ver detalhes da avaliação' });
+    expect(buttons).toHaveLength(1);
+
+    fireEvent.click(buttons[0]);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Detalhe da avaliação' });
+    await waitFor(() => expect(within(dialog).getByText('Acme')).toBeInTheDocument());
+  });
+
   it('shows an active-filter count on the mobile Filtros button and opens the drawer on click', async () => {
     vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
     renderList();
