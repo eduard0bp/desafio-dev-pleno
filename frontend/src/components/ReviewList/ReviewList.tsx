@@ -311,7 +311,15 @@ export function ReviewList() {
       </Drawer>
 
       <Box style={{ overflowX: 'auto' }}>
-        <Box role="table" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)' }}>
+        {/* minWidth: max-content — without it, this flex column collapses to
+            the scroll container's available width instead of the fixed-px
+            grid columns' natural width, and the rows' content (badges, the
+            rating) overflows past their card's border instead of the whole
+            table scrolling horizontally. */}
+        <Box
+          role="table"
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xs)', minWidth: 'max-content' }}
+        >
           <Box role="rowgroup">
             <Box
               role="row"
