@@ -1,6 +1,8 @@
 .row {
   cursor: pointer;
-  transition: box-shadow 120ms ease, border-color 120ms ease;
+  transition:
+    box-shadow 120ms ease,
+    border-color 120ms ease;
 }
 
 .row:hover {

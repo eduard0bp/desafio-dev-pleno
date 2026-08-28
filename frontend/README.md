@@ -23,8 +23,8 @@ Copie o `.env.example` e ajuste se necessário:
 cp .env.example .env
 ```
 
-| Variável | Descrição |
-|---|---|
+| Variável       | Descrição                                                                           |
+| -------------- | ----------------------------------------------------------------------------------- |
 | `VITE_API_URL` | URL base da API do backend consumida pelo frontend (padrão `http://localhost:3000`) |
 
 ## Rodando localmente

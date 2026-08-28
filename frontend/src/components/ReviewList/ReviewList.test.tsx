@@ -19,7 +19,7 @@ function renderList() {
           <SelectedReviewModal />
         </SelectedReviewProvider>
       </QueryClientProvider>
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 
@@ -57,7 +57,7 @@ function fakeListReviews(allReviews: CoreReviewListItem[]) {
 describe('ReviewList', () => {
   it('shows an empty state when there are no reviews', async () => {
     vi.spyOn(api, 'listReviews').mockResolvedValue(
-      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } })
+      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } }),
     );
     renderList();
     await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
@@ -73,7 +73,7 @@ describe('ReviewList', () => {
             analysis: { sentiment: 'positive', category: 'delivery', confidence: 0.9, matched_keywords: [] },
           }),
         ],
-      })
+      }),
     );
     renderList();
     await waitFor(() => expect(screen.getByText('Acme Corp')).toBeInTheDocument());
@@ -85,7 +85,7 @@ describe('ReviewList', () => {
 
   it('opens the review detail modal when a row is clicked', async () => {
     vi.spyOn(api, 'listReviews').mockResolvedValue(
-      getMockCoreListReviewsResult({ data: [getMockCoreReviewListItem({ company_id: 'Acme Corp' })] })
+      getMockCoreListReviewsResult({ data: [getMockCoreReviewListItem({ company_id: 'Acme Corp' })] }),
     );
     vi.spyOn(api, 'getReview').mockResolvedValue(getMockCoreReviewDetail({ company_id: 'Acme Corp' }));
     renderList();
@@ -100,10 +100,9 @@ describe('ReviewList', () => {
   it('shows an error message when the API call fails', async () => {
     vi.spyOn(api, 'listReviews').mockRejectedValue(new Error('Falha ao carregar avaliações'));
     renderList();
-    await waitFor(
-      () => expect(screen.getByText('Falha ao carregar avaliações')).toBeInTheDocument(),
-      { timeout: 10000 }
-    );
+    await waitFor(() => expect(screen.getByText('Falha ao carregar avaliações')).toBeInTheDocument(), {
+      timeout: 10000,
+    });
   }, 15000);
 
   it('sends the selected status as a query param when a pill is clicked', async () => {
@@ -142,7 +141,9 @@ describe('ReviewList', () => {
   });
 
   it('paginates via the pagination control, requesting the next page from the API', async () => {
-    const reviews = Array.from({ length: 12 }, (_, i) => getMockCoreReviewListItem({ id: String(i), company_id: `Empresa ${i}` }));
+    const reviews = Array.from({ length: 12 }, (_, i) =>
+      getMockCoreReviewListItem({ id: String(i), company_id: `Empresa ${i}` }),
+    );
     const spy = vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
     renderList();
 
@@ -162,7 +163,9 @@ describe('ReviewList', () => {
       getMockCoreReviewListItem({ id: 'fail-1', company_id: 'Globex', status: 'failed' }),
     ];
     vi.spyOn(api, 'listReviews').mockImplementation(fakeListReviews(reviews));
-    const retrySpy = vi.spyOn(api, 'retryReview').mockResolvedValue({ id: 'fail-1', external_id: 'x', status: 'pending' });
+    const retrySpy = vi
+      .spyOn(api, 'retryReview')
+      .mockResolvedValue({ id: 'fail-1', external_id: 'x', status: 'pending' });
 
     renderList();
     await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument());

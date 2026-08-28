@@ -8,7 +8,7 @@ function renderMessage(props: Partial<React.ComponentProps<typeof TableStateMess
   render(
     <MantineProvider>
       <TableStateMessage icon={<IconInbox />} title="Nenhum registro" {...props} />
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 

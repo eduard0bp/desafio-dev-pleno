@@ -1,43 +1,40 @@
-import { Button, Chip, Drawer, Group, Stack } from '@mantine/core'
-import { IconFilter } from '@tabler/icons-react'
-import type { CoreReviewStatusCounts } from '../../types'
-import type { StatusFilterValue, useReviewFilters } from '../ReviewList/hooks/useReviewFilters'
-import type { useDraftFilters } from '../ReviewList/hooks/useDraftFilters'
-import { FilterFields } from './FilterFields'
+import { Button, Chip, Drawer, Group, Stack } from '@mantine/core';
+import { IconFilter } from '@tabler/icons-react';
+import type { CoreReviewStatusCounts } from '../../types';
+import type { StatusFilterValue, useReviewFilters } from '../ReviewList/hooks/useReviewFilters';
+import type { useDraftFilters } from '../ReviewList/hooks/useDraftFilters';
+import { FilterFields } from './FilterFields';
 
 const STATUS_CHIPS: { value: StatusFilterValue; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'pending', label: 'Pendentes' },
   { value: 'processing', label: 'Processando' },
   { value: 'completed', label: 'Concluídos' },
-  { value: 'failed', label: 'Falhas' }
-]
+  { value: 'failed', label: 'Falhas' },
+];
 
 export function ReviewFilters({
   filters,
   draft,
-  counts
+  counts,
 }: {
-  filters: ReturnType<typeof useReviewFilters>
-  draft: ReturnType<typeof useDraftFilters>
-  counts: CoreReviewStatusCounts
+  filters: ReturnType<typeof useReviewFilters>;
+  draft: ReturnType<typeof useDraftFilters>;
+  counts: CoreReviewStatusCounts;
 }) {
   const activeFieldFilterCount = [
     filters.debouncedSearch !== '',
     filters.minRating != null,
     filters.dateFrom != null,
     filters.dateTo != null,
-    filters.sentiment != null
-  ].filter(Boolean).length
+    filters.sentiment != null,
+  ].filter(Boolean).length;
 
   return (
     <>
-      <Chip.Group
-        value={filters.status}
-        onChange={value => filters.setStatus(value as StatusFilterValue)}
-      >
+      <Chip.Group value={filters.status} onChange={(value) => filters.setStatus(value as StatusFilterValue)}>
         <Group gap="xs" wrap="wrap">
-          {STATUS_CHIPS.map(chip => (
+          {STATUS_CHIPS.map((chip) => (
             <Chip key={chip.value} value={chip.value} variant="filled" color="primary">
               {chip.label} ({counts[chip.value]})
             </Chip>
@@ -45,12 +42,7 @@ export function ReviewFilters({
         </Group>
       </Chip.Group>
 
-      <Button
-        hiddenFrom="sm"
-        color="tertiary"
-        leftSection={<IconFilter size={16} />}
-        onClick={draft.open}
-      >
+      <Button hiddenFrom="sm" color="tertiary" leftSection={<IconFilter size={16} />} onClick={draft.open}>
         Filtros
         {activeFieldFilterCount > 0 ? ` (${activeFieldFilterCount})` : ''}
       </Button>
@@ -85,5 +77,5 @@ export function ReviewFilters({
         </Stack>
       </Drawer>
     </>
-  )
+  );
 }

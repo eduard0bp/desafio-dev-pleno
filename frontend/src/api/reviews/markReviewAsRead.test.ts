@@ -14,7 +14,10 @@ describe('markReviewAsRead', () => {
 
     const result = await markReviewAsRead('1');
     expect(result).toEqual({ id: '1', is_read: true });
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/reviews/1/read'), expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/reviews/1/read'),
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
   it('throws an error with the API message when it fails', async () => {

@@ -14,7 +14,10 @@ describe('retryReview', () => {
 
     const result = await retryReview('1');
     expect(result).toEqual({ id: '1', external_id: 'x', status: 'pending' });
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/reviews/1/retry'), expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/reviews/1/retry'),
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
   it('throws an error with the API message when it fails', async () => {

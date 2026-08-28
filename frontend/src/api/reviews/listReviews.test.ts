@@ -10,7 +10,17 @@ describe('listReviews', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        data: [{ id: '1', external_id: 'x', company_id: 'c', rating: 5, status: 'pending', analysis: null, created_at: '2026-01-01' }],
+        data: [
+          {
+            id: '1',
+            external_id: 'x',
+            company_id: 'c',
+            rating: 5,
+            status: 'pending',
+            analysis: null,
+            created_at: '2026-01-01',
+          },
+        ],
         pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
         counts: { all: 1, pending: 1, processing: 0, completed: 0, failed: 0 },
       }),

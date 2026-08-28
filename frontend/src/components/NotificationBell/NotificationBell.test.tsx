@@ -18,7 +18,7 @@ function renderBell() {
           <SelectedReviewModal />
         </SelectedReviewProvider>
       </QueryClientProvider>
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 
@@ -27,9 +27,7 @@ describe('NotificationBell', () => {
     const spy = vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
     renderBell();
     await waitFor(() =>
-      expect(spy).toHaveBeenCalledWith(
-        expect.objectContaining({ sentiment: 'negative', isRead: false, pageSize: 5 })
-      )
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ sentiment: 'negative', isRead: false, pageSize: 5 })),
     );
   });
 
@@ -48,7 +46,7 @@ describe('NotificationBell', () => {
       getMockCoreListReviewsResult({
         data: [getMockCoreReviewListItem({ company_id: 'Padaria Trigo Dourado', comment: 'Comida chegou fria.' })],
         pagination: { page: 1, pageSize: 5, total: 3, totalPages: 1 },
-      })
+      }),
     );
     renderBell();
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
@@ -65,10 +63,10 @@ describe('NotificationBell', () => {
         getMockCoreListReviewsResult({
           data: [getMockCoreReviewListItem({ id: 'neg-1', company_id: 'Padaria Trigo Dourado' })],
           pagination: { page: 1, pageSize: 5, total: 3, totalPages: 1 },
-        })
+        }),
       )
       .mockResolvedValue(
-        getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 5, total: 2, totalPages: 1 } })
+        getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 5, total: 2, totalPages: 1 } }),
       );
     const markReadSpy = vi.spyOn(api, 'markReviewAsRead').mockResolvedValue({ id: 'neg-1', is_read: true });
     vi.spyOn(api, 'getReview').mockResolvedValue(getMockCoreReviewDetail({ company_id: 'Padaria Trigo Dourado' }));

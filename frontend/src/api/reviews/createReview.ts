@@ -9,6 +9,6 @@ export async function createReview(input: CoreCreateReviewInput): Promise<CoreCr
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
     },
-    'Falha ao enviar avaliação'
+    'Falha ao enviar avaliação',
   );
 }

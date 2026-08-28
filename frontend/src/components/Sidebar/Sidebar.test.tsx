@@ -10,7 +10,7 @@ function renderSidebar(initialPath = '/') {
       <MemoryRouter initialEntries={[initialPath]}>
         <Sidebar />
       </MemoryRouter>
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 

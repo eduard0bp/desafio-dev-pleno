@@ -8,7 +8,7 @@ function renderBadge(status: CoreReviewStatus) {
   render(
     <MantineProvider>
       <StatusBadge status={status} />
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 

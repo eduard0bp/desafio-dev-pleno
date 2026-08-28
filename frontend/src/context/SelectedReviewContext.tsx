@@ -13,7 +13,7 @@ export function SelectedReviewProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<SelectedReviewContextValue>(
     () => ({ selectedId, openReview: setSelectedId, closeReview: () => setSelectedId(null) }),
-    [selectedId]
+    [selectedId],
   );
 
   return <SelectedReviewContext.Provider value={value}>{children}</SelectedReviewContext.Provider>;

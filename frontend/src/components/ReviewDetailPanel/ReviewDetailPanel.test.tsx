@@ -13,7 +13,7 @@ function renderPanel(reviewId = '1') {
       <QueryClientProvider client={queryClient}>
         <ReviewDetailPanel reviewId={reviewId} />
       </QueryClientProvider>
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 
@@ -26,7 +26,7 @@ describe('ReviewDetailPanel', () => {
         getMockCoreReviewDetail({
           status: 'completed',
           analysis: { sentiment: 'positive', category: 'general', confidence: 0.9, matched_keywords: [] },
-        })
+        }),
       );
 
     renderPanel();
@@ -38,7 +38,10 @@ describe('ReviewDetailPanel', () => {
 
   it('renders the last_error message when a review has failed', async () => {
     vi.spyOn(api, 'getReview').mockResolvedValue(
-      getMockCoreReviewDetail({ status: 'failed', last_error: { message: 'texto muito curto', code: 'VALIDATION_ERROR' } })
+      getMockCoreReviewDetail({
+        status: 'failed',
+        last_error: { message: 'texto muito curto', code: 'VALIDATION_ERROR' },
+      }),
     );
 
     renderPanel();
@@ -48,11 +51,9 @@ describe('ReviewDetailPanel', () => {
 
   it('shows a retry button for a failed review and triggers the retry mutation on click', async () => {
     vi.spyOn(api, 'getReview').mockResolvedValue(
-      getMockCoreReviewDetail({ status: 'failed', last_error: { message: 'falhou', code: 'X' } })
+      getMockCoreReviewDetail({ status: 'failed', last_error: { message: 'falhou', code: 'X' } }),
     );
-    const retrySpy = vi
-      .spyOn(api, 'retryReview')
-      .mockResolvedValue({ id: '1', external_id: 'x', status: 'pending' });
+    const retrySpy = vi.spyOn(api, 'retryReview').mockResolvedValue({ id: '1', external_id: 'x', status: 'pending' });
 
     renderPanel('1');
 

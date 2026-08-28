@@ -81,7 +81,10 @@ test.describe('Field filters (desktop)', () => {
 
     const row = reviewPage.row(companyId);
     await expect(row.getByText('Concluído').or(row.getByText('Falhou'))).toBeVisible({ timeout: 30000 });
-    test.skip(await row.getByText('Falhou').isVisible(), 'the mock analysis API simulated a failure; no sentiment was computed for this review');
+    test.skip(
+      await row.getByText('Falhou').isVisible(),
+      'the mock analysis API simulated a failure; no sentiment was computed for this review',
+    );
 
     await expect(row.getByText('Negativo')).toBeVisible();
 

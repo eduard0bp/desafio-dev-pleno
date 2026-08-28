@@ -1,15 +1,15 @@
-import { Box, Paper, Text } from '@mantine/core'
-import { IconAlertTriangle, IconFilterOff, IconInbox } from '@tabler/icons-react'
-import { TableStateMessage } from '../TableStateMessage/TableStateMessage'
-import type { CoreReviewListItem } from '../../types'
-import type { useRetryReviewMutation } from '../../hooks'
-import { ReviewTableRow } from './ReviewTableRow'
+import { Box, Paper, Text } from '@mantine/core';
+import { IconAlertTriangle, IconFilterOff, IconInbox } from '@tabler/icons-react';
+import { TableStateMessage } from '../TableStateMessage/TableStateMessage';
+import type { CoreReviewListItem } from '../../types';
+import type { useRetryReviewMutation } from '../../hooks';
+import { ReviewTableRow } from './ReviewTableRow';
 import {
   COLUMN_LABELS,
   GRID_TEMPLATE_COLUMNS,
   STICKY_ACTIONS_HEADER_STYLE,
-  TABLE_MIN_WIDTH
-} from './reviewTableStyles'
+  TABLE_MIN_WIDTH,
+} from './reviewTableStyles';
 
 export function ReviewTable({
   reviews,
@@ -18,15 +18,15 @@ export function ReviewTable({
   hasActiveFilters,
   emptyStateMessage,
   retryMutation,
-  onOpenReview
+  onOpenReview,
 }: {
-  reviews: CoreReviewListItem[]
-  isError: boolean
-  error: unknown
-  hasActiveFilters: boolean
-  emptyStateMessage: string
-  retryMutation: ReturnType<typeof useRetryReviewMutation>
-  onOpenReview: (reviewId: string) => void
+  reviews: CoreReviewListItem[];
+  isError: boolean;
+  error: unknown;
+  hasActiveFilters: boolean;
+  emptyStateMessage: string;
+  retryMutation: ReturnType<typeof useRetryReviewMutation>;
+  onOpenReview: (reviewId: string) => void;
 }) {
   return (
     <Box style={{ overflowX: 'auto' }}>
@@ -36,7 +36,7 @@ export function ReviewTable({
           display: 'flex',
           flexDirection: 'column',
           gap: 'var(--mantine-spacing-xs)',
-          minWidth: TABLE_MIN_WIDTH
+          minWidth: TABLE_MIN_WIDTH,
         }}
       >
         <Box role="rowgroup">
@@ -46,10 +46,10 @@ export function ReviewTable({
             style={{
               display: 'grid',
               gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
-              gap: 'var(--mantine-spacing-sm)'
+              gap: 'var(--mantine-spacing-sm)',
             }}
           >
-            {COLUMN_LABELS.map(label => (
+            {COLUMN_LABELS.map((label) => (
               <Text
                 key={label}
                 role="columnheader"
@@ -70,7 +70,7 @@ export function ReviewTable({
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--mantine-spacing-xs)'
+            gap: 'var(--mantine-spacing-xs)',
           }}
         >
           {isError ? (
@@ -95,7 +95,7 @@ export function ReviewTable({
               />
             </Paper>
           ) : (
-            reviews.map(review => (
+            reviews.map((review) => (
               <ReviewTableRow
                 key={review.id}
                 review={review}
@@ -107,5 +107,5 @@ export function ReviewTable({
         </Box>
       </Box>
     </Box>
-  )
+  );
 }

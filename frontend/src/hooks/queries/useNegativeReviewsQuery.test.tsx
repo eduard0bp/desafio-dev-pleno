@@ -16,9 +16,11 @@ describe('useNegativeReviewsQuery', () => {
   });
 
   it('fetches only unread negative reviews, capped at 5 per page', async () => {
-    const spy = vi.spyOn(api, 'listReviews').mockResolvedValue(
-      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 5, total: 0, totalPages: 1 } })
-    );
+    const spy = vi
+      .spyOn(api, 'listReviews')
+      .mockResolvedValue(
+        getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 5, total: 0, totalPages: 1 } }),
+      );
 
     const { result } = renderHook(() => useNegativeReviewsQuery(), { wrapper });
 

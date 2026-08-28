@@ -14,7 +14,7 @@ function renderForm() {
       <QueryClientProvider client={queryClient}>
         <ReviewForm />
       </QueryClientProvider>
-    </MantineProvider>
+    </MantineProvider>,
   );
 }
 
@@ -31,9 +31,9 @@ describe('ReviewForm', () => {
     fireEvent.change(screen.getByLabelText('Comentário'), { target: { value: 'Muito bom!' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
 
-    await waitFor(() => expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ company_id: 'company-1', comment: 'Muito bom!' })
-    ));
+    await waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ company_id: 'company-1', comment: 'Muito bom!' })),
+    );
   });
 
   it('shows an error notification when the API call fails', async () => {
@@ -53,9 +53,7 @@ describe('ReviewForm', () => {
     fireEvent.change(screen.getByLabelText('Comentário'), { target: { value: 'ok' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
 
-    await waitFor(() =>
-      expect(screen.getByText('O comentário deve ter pelo menos 3 caracteres')).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText('O comentário deve ter pelo menos 3 caracteres')).toBeInTheDocument());
   });
 
   it('shows inline errors instead of submitting when required fields are empty', async () => {
@@ -94,7 +92,7 @@ describe('ReviewForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
 
     await waitFor(() =>
-      expect(screen.getByText('O comentário deve ter no máximo 2000 caracteres')).toBeInTheDocument()
+      expect(screen.getByText('O comentário deve ter no máximo 2000 caracteres')).toBeInTheDocument(),
     );
     expect(spy).not.toHaveBeenCalled();
   });
@@ -108,7 +106,7 @@ describe('ReviewForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar avaliação' }));
 
     await waitFor(() =>
-      expect(screen.getByText('O nome da empresa deve ter no máximo 100 caracteres')).toBeInTheDocument()
+      expect(screen.getByText('O nome da empresa deve ter no máximo 100 caracteres')).toBeInTheDocument(),
     );
     expect(spy).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Empresa')).toHaveAttribute('maxLength', '100');

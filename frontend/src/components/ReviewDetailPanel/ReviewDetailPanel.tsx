@@ -35,7 +35,9 @@ export function ReviewDetailPanel({ reviewId }: { reviewId: string }) {
             {SENTIMENT_LABELS[data.analysis.sentiment]?.label ?? data.analysis.sentiment}
           </Badge>
           <Badge color="tertiary">{CATEGORY_LABELS[data.analysis.category] ?? data.analysis.category}</Badge>
-          <Text size="sm" c="dimmed">confiança: {Math.round(data.analysis.confidence * 100)}%</Text>
+          <Text size="sm" c="dimmed">
+            confiança: {Math.round(data.analysis.confidence * 100)}%
+          </Text>
         </Group>
       )}
       {data.status === 'failed' && (

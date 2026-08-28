@@ -30,8 +30,14 @@ test.describe('Notification bell', () => {
 
     const row = reviewPage.row(companyId);
     await expect(row.getByText('Concluído').or(row.getByText('Falhou'))).toBeVisible({ timeout: 30000 });
-    test.skip(await row.getByText('Falhou').isVisible(), 'the mock analysis API simulated a failure; no sentiment was computed for this review');
-    test.skip(!(await row.getByText('Negativo').isVisible()), 'the mock analysis API scored this review as non-negative');
+    test.skip(
+      await row.getByText('Falhou').isVisible(),
+      'the mock analysis API simulated a failure; no sentiment was computed for this review',
+    );
+    test.skip(
+      !(await row.getByText('Negativo').isVisible()),
+      'the mock analysis API scored this review as non-negative',
+    );
 
     await reviewPage.goto();
     await reviewPage.bell.open();

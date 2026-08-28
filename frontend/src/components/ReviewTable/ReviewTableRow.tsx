@@ -1,25 +1,25 @@
-import { Badge, Box, Paper, Rating, Text } from '@mantine/core'
-import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants'
-import { StatusBadge } from '../StatusBadge/StatusBadge'
-import type { CoreReviewListItem } from '../../types'
-import type { useRetryReviewMutation } from '../../hooks'
-import classes from './ReviewTable.module.css'
-import { CELL_FLEX_STYLE, GRID_TEMPLATE_COLUMNS, STICKY_ACTIONS_ROW_STYLE } from './reviewTableStyles'
-import { ReviewRowActions } from './ReviewRowActions'
+import { Badge, Box, Paper, Rating, Text } from '@mantine/core';
+import { SENTIMENT_LABELS, CATEGORY_LABELS } from '../../constants';
+import { StatusBadge } from '../StatusBadge/StatusBadge';
+import type { CoreReviewListItem } from '../../types';
+import type { useRetryReviewMutation } from '../../hooks';
+import classes from './ReviewTable.module.css';
+import { CELL_FLEX_STYLE, GRID_TEMPLATE_COLUMNS, STICKY_ACTIONS_ROW_STYLE } from './reviewTableStyles';
+import { ReviewRowActions } from './ReviewRowActions';
 
 export function ReviewTableRow({
   review,
   retryMutation,
-  onOpenReview
+  onOpenReview,
 }: {
-  review: CoreReviewListItem
-  retryMutation: ReturnType<typeof useRetryReviewMutation>
-  onOpenReview: (reviewId: string) => void
+  review: CoreReviewListItem;
+  retryMutation: ReturnType<typeof useRetryReviewMutation>;
+  onOpenReview: (reviewId: string) => void;
 }) {
-  const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined
+  const sentiment = review.analysis ? SENTIMENT_LABELS[review.analysis.sentiment] : undefined;
   const category = review.analysis
     ? (CATEGORY_LABELS[review.analysis.category] ?? review.analysis.category)
-    : undefined
+    : undefined;
 
   return (
     <Paper
@@ -33,7 +33,7 @@ export function ReviewTableRow({
         display: 'grid',
         gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
         gap: 'var(--mantine-spacing-sm)',
-        alignItems: 'center'
+        alignItems: 'center',
       }}
     >
       <Box role="cell" miw={0}>
@@ -75,5 +75,5 @@ export function ReviewTableRow({
         <ReviewRowActions review={review} retryMutation={retryMutation} onOpenReview={onOpenReview} />
       </Box>
     </Paper>
-  )
+  );
 }

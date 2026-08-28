@@ -10,7 +10,7 @@ import * as api from '../../api';
 describe('ReviewsPage', () => {
   it('renders the reviews monitoring list', async () => {
     vi.spyOn(api, 'listReviews').mockResolvedValue(
-      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } })
+      getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } }),
     );
     const queryClient = new QueryClient();
     render(
@@ -20,7 +20,7 @@ describe('ReviewsPage', () => {
             <ReviewsPage />
           </SelectedReviewProvider>
         </QueryClientProvider>
-      </MantineProvider>
+      </MantineProvider>,
     );
     await waitFor(() => expect(screen.getByText('Nenhuma avaliação cadastrada ainda.')).toBeInTheDocument());
   });

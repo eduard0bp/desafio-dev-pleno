@@ -14,7 +14,10 @@ describe('createReview', () => {
 
     const result = await createReview({ external_id: 'x', company_id: 'c', rating: 5, comment: 'ótimo' });
     expect(result).toEqual({ id: '1', external_id: 'x', status: 'pending' });
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/reviews'), expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/reviews'),
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
   it('throws an error with the API message when it fails', async () => {
@@ -23,6 +26,8 @@ describe('createReview', () => {
       json: async () => ({ error: { message: 'Payload inválido' } }),
     } as Response);
 
-    await expect(createReview({ external_id: 'x', company_id: 'c', rating: 5, comment: '' })).rejects.toThrow('Payload inválido');
+    await expect(createReview({ external_id: 'x', company_id: 'c', rating: 5, comment: '' })).rejects.toThrow(
+      'Payload inválido',
+    );
   });
 });

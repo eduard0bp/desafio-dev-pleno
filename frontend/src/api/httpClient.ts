@@ -5,7 +5,11 @@ async function parseErrorMessage(response: Response, fallback: string): Promise<
   return body?.error?.message ?? fallback;
 }
 
-export async function requestJson<T>(url: string, options: RequestInit | undefined, fallbackMessage: string): Promise<T> {
+export async function requestJson<T>(
+  url: string,
+  options: RequestInit | undefined,
+  fallbackMessage: string,
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, options);

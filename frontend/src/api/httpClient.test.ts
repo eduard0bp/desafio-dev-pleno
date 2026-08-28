@@ -22,7 +22,7 @@ describe('requestJson', () => {
     } as Response);
 
     await expect(requestJson('/anything', undefined, 'Falha ao carregar avaliações')).rejects.toThrow(
-      'Falha ao carregar avaliações'
+      'Falha ao carregar avaliações',
     );
   });
 
@@ -35,7 +35,7 @@ describe('requestJson', () => {
     } as unknown as Response);
 
     await expect(requestJson('/anything', undefined, 'Falha ao carregar avaliações')).rejects.toThrow(
-      'Falha ao carregar avaliações'
+      'Falha ao carregar avaliações',
     );
   });
 
@@ -43,7 +43,7 @@ describe('requestJson', () => {
     vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
     await expect(requestJson('/anything', undefined, 'Falha ao carregar avaliações')).rejects.toThrow(
-      'Falha ao carregar avaliações'
+      'Falha ao carregar avaliações',
     );
   });
 });

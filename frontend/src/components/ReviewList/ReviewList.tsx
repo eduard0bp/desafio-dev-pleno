@@ -1,27 +1,27 @@
-import { Center, Flex, Loader, Pagination, Stack, Text, Title } from '@mantine/core'
-import { useReviewsQuery, useRetryReviewMutation } from '../../hooks'
-import { useReviewFilters } from './hooks/useReviewFilters'
-import { useDraftFilters } from './hooks/useDraftFilters'
-import { useSelectedReview } from '../../context/SelectedReviewContext'
-import type { CoreReviewStatusCounts } from '../../types'
-import { ReviewFilters } from '../ReviewFilters/ReviewFilters'
-import { ReviewTable } from '../ReviewTable/ReviewTable'
+import { Center, Flex, Loader, Pagination, Stack, Text, Title } from '@mantine/core';
+import { useReviewsQuery, useRetryReviewMutation } from '../../hooks';
+import { useReviewFilters } from './hooks/useReviewFilters';
+import { useDraftFilters } from './hooks/useDraftFilters';
+import { useSelectedReview } from '../../context/SelectedReviewContext';
+import type { CoreReviewStatusCounts } from '../../types';
+import { ReviewFilters } from '../ReviewFilters/ReviewFilters';
+import { ReviewTable } from '../ReviewTable/ReviewTable';
 
 const EMPTY_COUNTS: CoreReviewStatusCounts = {
   all: 0,
   pending: 0,
   processing: 0,
   completed: 0,
-  failed: 0
-}
+  failed: 0,
+};
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10;
 
 export function ReviewList() {
-  const filters = useReviewFilters()
-  const draftFilters = useDraftFilters(filters)
-  const retryMutation = useRetryReviewMutation()
-  const { openReview } = useSelectedReview()
+  const filters = useReviewFilters();
+  const draftFilters = useDraftFilters(filters);
+  const retryMutation = useRetryReviewMutation();
+  const { openReview } = useSelectedReview();
 
   const { data, isLoading, isError, error } = useReviewsQuery({
     page: filters.page,
@@ -31,15 +31,15 @@ export function ReviewList() {
     search: filters.debouncedSearch || undefined,
     dateFrom: filters.dateFrom ?? undefined,
     dateTo: filters.dateTo ?? undefined,
-    sentiment: filters.sentiment ?? undefined
-  })
+    sentiment: filters.sentiment ?? undefined,
+  });
 
   if (isLoading) {
     return (
       <Center py="xl">
         <Loader />
       </Center>
-    )
+    );
   }
 
   const hasActiveFilters =
@@ -48,18 +48,18 @@ export function ReviewList() {
     filters.debouncedSearch !== '' ||
     filters.dateFrom != null ||
     filters.dateTo != null ||
-    filters.sentiment != null
+    filters.sentiment != null;
 
   const emptyStateMessage = hasActiveFilters
     ? 'Nenhuma avaliação encontrada para os filtros selecionados.'
-    : 'Nenhuma avaliação cadastrada ainda.'
+    : 'Nenhuma avaliação cadastrada ainda.';
 
-  const counts = data?.counts ?? EMPTY_COUNTS
-  const reviews = data?.data ?? []
-  const pagination = data?.pagination
+  const counts = data?.counts ?? EMPTY_COUNTS;
+  const reviews = data?.data ?? [];
+  const pagination = data?.pagination;
 
-  const rangeStart = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0
-  const rangeEnd = pagination ? Math.min(pagination.page * pagination.pageSize, pagination.total) : 0
+  const rangeStart = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+  const rangeEnd = pagination ? Math.min(pagination.page * pagination.pageSize, pagination.total) : 0;
 
   return (
     <Stack gap="lg">
@@ -96,5 +96,5 @@ export function ReviewList() {
         </Flex>
       )}
     </Stack>
-  )
+  );
 }

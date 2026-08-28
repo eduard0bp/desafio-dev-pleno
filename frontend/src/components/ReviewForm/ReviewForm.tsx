@@ -25,12 +25,14 @@ export function ReviewForm() {
     validate: {
       company_id: (value) => {
         if (value.trim().length === 0) return 'Informe a empresa';
-        if (value.length > SHORT_TEXT_MAX_LENGTH) return `O nome da empresa deve ter no máximo ${SHORT_TEXT_MAX_LENGTH} caracteres`;
+        if (value.length > SHORT_TEXT_MAX_LENGTH)
+          return `O nome da empresa deve ter no máximo ${SHORT_TEXT_MAX_LENGTH} caracteres`;
         return null;
       },
       comment: (value) => {
         if (value.trim().length < 3) return 'O comentário deve ter pelo menos 3 caracteres';
-        if (value.length > COMMENT_MAX_LENGTH) return `O comentário deve ter no máximo ${COMMENT_MAX_LENGTH} caracteres`;
+        if (value.length > COMMENT_MAX_LENGTH)
+          return `O comentário deve ter no máximo ${COMMENT_MAX_LENGTH} caracteres`;
         return null;
       },
     },
@@ -57,7 +59,11 @@ export function ReviewForm() {
           />
           <Input.Wrapper label="Nota">
             <div>
-              <Rating color="tertiary" value={form.values.rating} onChange={(value) => form.setFieldValue('rating', value)} />
+              <Rating
+                color="tertiary"
+                value={form.values.rating}
+                onChange={(value) => form.setFieldValue('rating', value)}
+              />
             </div>
           </Input.Wrapper>
           <Textarea

@@ -12,7 +12,7 @@ describe('NewReviewPage', () => {
         <QueryClientProvider client={queryClient}>
           <NewReviewPage />
         </QueryClientProvider>
-      </MantineProvider>
+      </MantineProvider>,
     );
     expect(screen.getByRole('button', { name: 'Enviar avaliação' })).toBeInTheDocument();
   });
