@@ -8,10 +8,7 @@ export interface HealthCheckResult {
 
 export async function checkHealth(): Promise<HealthCheckResult> {
   const [postgres, redis] = await Promise.all([
-    prisma
-      .$queryRaw`SELECT 1`
-      .then(() => true)
-      .catch(() => false),
+    prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
     connection
       .ping()
       .then((reply) => reply === 'PONG')

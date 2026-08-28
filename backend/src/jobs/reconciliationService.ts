@@ -26,7 +26,7 @@ export async function reconcileStuckReviews(thresholdMs = STUCK_PENDING_THRESHOL
 export function startReconciliationLoop(intervalMs = 60_000): NodeJS.Timeout {
   return setInterval(() => {
     reconcileStuckReviews().catch((err) =>
-      log('error', 'review_reconciliation_error', { message: err instanceof Error ? err.message : String(err) })
+      log('error', 'review_reconciliation_error', { message: err instanceof Error ? err.message : String(err) }),
     );
   }, intervalMs);
 }

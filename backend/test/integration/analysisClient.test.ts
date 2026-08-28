@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { analyzeReview, RetryableAnalysisError } from '../../src/services/analysisClient';
 
-const baseInput = { reviewId: `analysis-${randomUUID()}`, companyId: 'c1', rating: 2, text: 'Demorou muito e chegou frio.' };
+const baseInput = {
+  reviewId: `analysis-${randomUUID()}`,
+  companyId: 'c1',
+  rating: 2,
+  text: 'Demorou muito e chegou frio.',
+};
 
 describe('analyzeReview', () => {
   it('success scenario returns the analysis', async () => {
@@ -27,8 +32,6 @@ describe('analyzeReview', () => {
   });
 
   it('rate-limit scenario throws RetryableAnalysisError', async () => {
-    await expect(
-      analyzeReview({ ...baseInput, mockScenario: 'rate-limit' })
-    ).rejects.toThrow(RetryableAnalysisError);
+    await expect(analyzeReview({ ...baseInput, mockScenario: 'rate-limit' })).rejects.toThrow(RetryableAnalysisError);
   });
 });

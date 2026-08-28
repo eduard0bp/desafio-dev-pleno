@@ -26,7 +26,13 @@ describe('request logging middleware', () => {
     const call = logSpy.mock.calls.find((c) => (c[0] as string).includes('http_request'));
     expect(call).toBeDefined();
     const logged = JSON.parse(call?.[0] as string);
-    expect(logged).toMatchObject({ level: 'info', event: 'http_request', method: 'GET', path: '/this-route-does-not-exist', status: 404 });
+    expect(logged).toMatchObject({
+      level: 'info',
+      event: 'http_request',
+      method: 'GET',
+      path: '/this-route-does-not-exist',
+      status: 404,
+    });
     expect(logged.request_id).toBeTruthy();
     expect(typeof logged.duration_ms).toBe('number');
   });

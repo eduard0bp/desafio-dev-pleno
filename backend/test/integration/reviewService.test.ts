@@ -11,7 +11,10 @@ describe('reviewService', () => {
   it('creates a new review and marks created: true', async () => {
     const externalId = `test-${randomUUID()}`;
     const { review, created } = await createReview({
-      externalId, companyId: 'c1', rating: 5, comment: 'Excelente',
+      externalId,
+      companyId: 'c1',
+      rating: 5,
+      comment: 'Excelente',
     });
     expect(created).toBe(true);
     expect(review.status).toBe('pending');
@@ -89,10 +92,21 @@ describe('reviewService', () => {
     const idInRange = `test-${randomUUID()}`;
     const idOutOfRange = `test-${randomUUID()}`;
     const { review: inRange } = await createReview({ externalId: idInRange, companyId: 'c', rating: 3, comment: 'a' });
-    const { review: outOfRange } = await createReview({ externalId: idOutOfRange, companyId: 'c', rating: 3, comment: 'b' });
+    const { review: outOfRange } = await createReview({
+      externalId: idOutOfRange,
+      companyId: 'c',
+      rating: 3,
+      comment: 'b',
+    });
 
-    await prisma.review.update({ where: { id: inRange.id }, data: { createdAt: new Date('2026-02-15T12:00:00.000Z') } });
-    await prisma.review.update({ where: { id: outOfRange.id }, data: { createdAt: new Date('2026-03-01T00:00:00.000Z') } });
+    await prisma.review.update({
+      where: { id: inRange.id },
+      data: { createdAt: new Date('2026-02-15T12:00:00.000Z') },
+    });
+    await prisma.review.update({
+      where: { id: outOfRange.id },
+      data: { createdAt: new Date('2026-03-01T00:00:00.000Z') },
+    });
 
     const { data } = await listReviews({
       page: 1,
@@ -108,7 +122,12 @@ describe('reviewService', () => {
   it('paginates correctly and reports total/totalPages', async () => {
     const marker = randomUUID();
     for (let i = 0; i < 5; i += 1) {
-      await createReview({ externalId: `test-${marker}-${i}`, companyId: `PageCo-${marker}`, rating: 3, comment: `review ${i}` });
+      await createReview({
+        externalId: `test-${marker}-${i}`,
+        companyId: `PageCo-${marker}`,
+        rating: 3,
+        comment: `review ${i}`,
+      });
     }
 
     const firstPage = await listReviews({ page: 1, pageSize: 2, search: `pageco-${marker}` });
@@ -124,7 +143,12 @@ describe('reviewService', () => {
     const idPending = `test-${marker}-pending`;
     const idFailed = `test-${marker}-failed`;
     await createReview({ externalId: idPending, companyId: `CountCo-${marker}`, rating: 3, comment: 'a' });
-    const { review: failedReview } = await createReview({ externalId: idFailed, companyId: `CountCo-${marker}`, rating: 3, comment: 'b' });
+    const { review: failedReview } = await createReview({
+      externalId: idFailed,
+      companyId: `CountCo-${marker}`,
+      rating: 3,
+      comment: 'b',
+    });
     await prisma.review.update({ where: { id: failedReview.id }, data: { status: 'failed' } });
 
     const { counts } = await listReviews({ page: 1, pageSize: 100, search: `countco-${marker}`, status: 'failed' });

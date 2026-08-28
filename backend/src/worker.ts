@@ -97,19 +97,15 @@ export async function processReviewJob(job: JobLike): Promise<void> {
 }
 
 export function startWorker(): Worker<ReviewJobData> {
-  const worker = new Worker<ReviewJobData>(
-    REVIEW_QUEUE_NAME,
-    (job: Job<ReviewJobData>) => processReviewJob(job),
-    {
-      connection,
-      settings: {
-        backoffStrategy: (attemptsMade: number, _type?: string, err?: Error) => {
-          const retryAfterSeconds = err instanceof RetryableAnalysisError ? err.retryAfterSeconds : undefined;
-          return computeBackoffDelayMs(attemptsMade, retryAfterSeconds);
-        },
+  const worker = new Worker<ReviewJobData>(REVIEW_QUEUE_NAME, (job: Job<ReviewJobData>) => processReviewJob(job), {
+    connection,
+    settings: {
+      backoffStrategy: (attemptsMade: number, _type?: string, err?: Error) => {
+        const retryAfterSeconds = err instanceof RetryableAnalysisError ? err.retryAfterSeconds : undefined;
+        return computeBackoffDelayMs(attemptsMade, retryAfterSeconds);
       },
-    }
-  );
+    },
+  });
 
   worker.on('failed', async (job, err) => {
     if (!job) return;
@@ -123,13 +119,13 @@ export function startWorker(): Worker<ReviewJobData> {
             attemptsMade: job.attemptsMade,
             message: err.message,
             requestId: job.data.requestId,
-          })
+          }),
         )
         .catch((updateErr) =>
           log('error', 'review_mark_failed_error', {
             reviewId: job.data.reviewId,
             message: updateErr instanceof Error ? updateErr.message : String(updateErr),
-          })
+          }),
         );
     }
   });

@@ -19,7 +19,10 @@ describe('Reviews API', () => {
   it('POST /reviews creates a review and responds 202 pending', async () => {
     const externalId = `test-${randomUUID()}`;
     const response = await request(app).post('/reviews').send({
-      external_id: externalId, company_id: 'c1', rating: 4, comment: 'Bom atendimento',
+      external_id: externalId,
+      company_id: 'c1',
+      rating: 4,
+      comment: 'Bom atendimento',
     });
 
     expect(response.status).toBe(202);
@@ -58,13 +61,22 @@ describe('Reviews API', () => {
   it('GET /reviews lists the created reviews with pagination and counts', async () => {
     const externalId = `test-${randomUUID()}`;
     await request(app).post('/reviews').send({
-      external_id: externalId, company_id: 'c1', rating: 5, comment: 'top',
+      external_id: externalId,
+      company_id: 'c1',
+      rating: 5,
+      comment: 'top',
     });
 
     const response = await request(app).get('/reviews');
     expect(response.status).toBe(200);
     const item = response.body.data.find((r: { external_id: string }) => r.external_id === externalId);
-    expect(item).toMatchObject({ external_id: externalId, company_id: 'c1', rating: 5, status: 'pending', analysis: null });
+    expect(item).toMatchObject({
+      external_id: externalId,
+      company_id: 'c1',
+      rating: 5,
+      status: 'pending',
+      analysis: null,
+    });
     expect(response.body.pagination).toMatchObject({ page: 1, pageSize: 10 });
     expect(typeof response.body.pagination.total).toBe('number');
     expect(typeof response.body.pagination.totalPages).toBe('number');
@@ -75,12 +87,19 @@ describe('Reviews API', () => {
   it('GET /reviews filters by status via query param', async () => {
     const marker = randomUUID();
     const idFailed = `test-${marker}-failed`;
-    const created = await request(app).post('/reviews').send({
-      external_id: idFailed, company_id: `FilterCo-${marker}`, rating: 3, comment: 'vai falhar',
-    });
+    const created = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: idFailed,
+        company_id: `FilterCo-${marker}`,
+        rating: 3,
+        comment: 'vai falhar',
+      });
     await prisma.review.update({ where: { id: created.body.id }, data: { status: 'failed' } });
 
-    const response = await request(app).get('/reviews').query({ status: 'failed', search: `filterco-${marker}` });
+    const response = await request(app)
+      .get('/reviews')
+      .query({ status: 'failed', search: `filterco-${marker}` });
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].external_id).toBe(idFailed);
@@ -88,14 +107,26 @@ describe('Reviews API', () => {
 
   it('GET /reviews filters by minRating and search via query params', async () => {
     const marker = randomUUID();
-    await request(app).post('/reviews').send({
-      external_id: `test-${marker}-low`, company_id: `RatingCo-${marker}`, rating: 2, comment: 'nota baixa',
-    });
-    await request(app).post('/reviews').send({
-      external_id: `test-${marker}-high`, company_id: `RatingCo-${marker}`, rating: 5, comment: 'nota alta',
-    });
+    await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${marker}-low`,
+        company_id: `RatingCo-${marker}`,
+        rating: 2,
+        comment: 'nota baixa',
+      });
+    await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${marker}-high`,
+        company_id: `RatingCo-${marker}`,
+        rating: 5,
+        comment: 'nota alta',
+      });
 
-    const response = await request(app).get('/reviews').query({ search: `ratingco-${marker}`, minRating: '4' });
+    const response = await request(app)
+      .get('/reviews')
+      .query({ search: `ratingco-${marker}`, minRating: '4' });
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].external_id).toBe(`test-${marker}-high`);
@@ -103,22 +134,40 @@ describe('Reviews API', () => {
 
   it('GET /reviews filters by sentiment via query param', async () => {
     const marker = randomUUID();
-    const negative = await request(app).post('/reviews').send({
-      external_id: `test-${marker}-neg`, company_id: `SentimentCo-${marker}`, rating: 1, comment: 'ruim',
-    });
-    const positive = await request(app).post('/reviews').send({
-      external_id: `test-${marker}-pos`, company_id: `SentimentCo-${marker}`, rating: 5, comment: 'bom',
-    });
+    const negative = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${marker}-neg`,
+        company_id: `SentimentCo-${marker}`,
+        rating: 1,
+        comment: 'ruim',
+      });
+    const positive = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${marker}-pos`,
+        company_id: `SentimentCo-${marker}`,
+        rating: 5,
+        comment: 'bom',
+      });
     await prisma.review.update({
       where: { id: negative.body.id },
-      data: { status: 'completed', analysis: { sentiment: 'negative', category: 'general', confidence: 0.9, matched_keywords: [] } },
+      data: {
+        status: 'completed',
+        analysis: { sentiment: 'negative', category: 'general', confidence: 0.9, matched_keywords: [] },
+      },
     });
     await prisma.review.update({
       where: { id: positive.body.id },
-      data: { status: 'completed', analysis: { sentiment: 'positive', category: 'general', confidence: 0.9, matched_keywords: [] } },
+      data: {
+        status: 'completed',
+        analysis: { sentiment: 'positive', category: 'general', confidence: 0.9, matched_keywords: [] },
+      },
     });
 
-    const response = await request(app).get('/reviews').query({ search: `sentimentco-${marker}`, sentiment: 'negative' });
+    const response = await request(app)
+      .get('/reviews')
+      .query({ search: `sentimentco-${marker}`, sentiment: 'negative' });
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].external_id).toBe(`test-${marker}-neg`);
@@ -132,18 +181,27 @@ describe('Reviews API', () => {
 
   it('GET /reviews defaults new reviews to is_read: false and filters by isRead via query param', async () => {
     const marker = randomUUID();
-    const created = await request(app).post('/reviews').send({
-      external_id: `test-${marker}`, company_id: `ReadCo-${marker}`, rating: 1, comment: 'ruim',
-    });
+    const created = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${marker}`,
+        company_id: `ReadCo-${marker}`,
+        rating: 1,
+        comment: 'ruim',
+      });
     expect(created.body).toMatchObject({ external_id: `test-${marker}` });
 
-    const beforeRead = await request(app).get('/reviews').query({ search: `readco-${marker}`, isRead: 'false' });
+    const beforeRead = await request(app)
+      .get('/reviews')
+      .query({ search: `readco-${marker}`, isRead: 'false' });
     expect(beforeRead.body.data).toHaveLength(1);
     expect(beforeRead.body.data[0].is_read).toBe(false);
 
     await prisma.review.update({ where: { id: created.body.id }, data: { isRead: true } });
 
-    const afterRead = await request(app).get('/reviews').query({ search: `readco-${marker}`, isRead: 'false' });
+    const afterRead = await request(app)
+      .get('/reviews')
+      .query({ search: `readco-${marker}`, isRead: 'false' });
     expect(afterRead.body.data).toHaveLength(0);
   });
 
@@ -156,12 +214,19 @@ describe('Reviews API', () => {
   it('GET /reviews paginates via page/pageSize query params', async () => {
     const marker = randomUUID();
     for (let i = 0; i < 3; i += 1) {
-      await request(app).post('/reviews').send({
-        external_id: `test-${marker}-${i}`, company_id: `PageCo-${marker}`, rating: 3, comment: `review ${i}`,
-      });
+      await request(app)
+        .post('/reviews')
+        .send({
+          external_id: `test-${marker}-${i}`,
+          company_id: `PageCo-${marker}`,
+          rating: 3,
+          comment: `review ${i}`,
+        });
     }
 
-    const response = await request(app).get('/reviews').query({ search: `pageco-${marker}`, page: '2', pageSize: '2' });
+    const response = await request(app)
+      .get('/reviews')
+      .query({ search: `pageco-${marker}`, page: '2', pageSize: '2' });
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
     expect(response.body.pagination).toEqual({ page: 2, pageSize: 2, total: 3, totalPages: 2 });
@@ -181,7 +246,10 @@ describe('Reviews API', () => {
   it('GET /reviews/:id returns the review detail', async () => {
     const externalId = `test-${randomUUID()}`;
     const created = await request(app).post('/reviews').send({
-      external_id: externalId, company_id: 'c1', rating: 2, comment: 'ruim',
+      external_id: externalId,
+      company_id: 'c1',
+      rating: 2,
+      comment: 'ruim',
     });
 
     const response = await request(app).get(`/reviews/${created.body.id}`);
@@ -239,9 +307,14 @@ describe('Reviews API', () => {
   });
 
   it('POST /reviews/:id/retry returns 409 when the review is not failed', async () => {
-    const created = await request(app).post('/reviews').send({
-      external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 3, comment: 'ainda pendente',
-    });
+    const created = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${randomUUID()}`,
+        company_id: 'c1',
+        rating: 3,
+        comment: 'ainda pendente',
+      });
 
     const response = await request(app).post(`/reviews/${created.body.id}/retry`);
     expect(response.status).toBe(409);
@@ -249,9 +322,14 @@ describe('Reviews API', () => {
   });
 
   it('POST /reviews/:id/retry resets a failed review to pending and re-enqueues it', async () => {
-    const created = await request(app).post('/reviews').send({
-      external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 1, comment: 'vai falhar de propósito',
-    });
+    const created = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${randomUUID()}`,
+        company_id: 'c1',
+        rating: 1,
+        comment: 'vai falhar de propósito',
+      });
     await prisma.review.update({
       where: { id: created.body.id },
       data: { status: 'failed', attempts: 5, lastError: { message: 'esgotou as tentativas' } },
@@ -277,9 +355,14 @@ describe('Reviews API', () => {
   });
 
   it('POST /reviews/:id/read marks the review as read', async () => {
-    const created = await request(app).post('/reviews').send({
-      external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 1, comment: 'ruim',
-    });
+    const created = await request(app)
+      .post('/reviews')
+      .send({
+        external_id: `test-${randomUUID()}`,
+        company_id: 'c1',
+        rating: 1,
+        comment: 'ruim',
+      });
 
     const response = await request(app).post(`/reviews/${created.body.id}/read`);
     expect(response.status).toBe(200);

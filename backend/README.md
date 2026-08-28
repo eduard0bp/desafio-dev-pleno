@@ -24,13 +24,13 @@ cp .env.example .env
 
 Variáveis esperadas:
 
-| Variável | Descrição |
-|---|---|
-| `DATABASE_URL` | connection string do Postgres usada pelo Prisma |
-| `PORT` | porta em que a API HTTP escuta (padrão `3000`) |
-| `WORKER_PORT` | porta em que o worker expõe seu próprio `/health` (padrão `3001`) |
-| `REDIS_URL` | connection string do Redis usada pela fila BullMQ |
-| `MOCK_ANALYSIS_API_URL` | URL base da API fake de análise |
+| Variável                | Descrição                                                         |
+| ----------------------- | ----------------------------------------------------------------- |
+| `DATABASE_URL`          | connection string do Postgres usada pelo Prisma                   |
+| `PORT`                  | porta em que a API HTTP escuta (padrão `3000`)                    |
+| `WORKER_PORT`           | porta em que o worker expõe seu próprio `/health` (padrão `3001`) |
+| `REDIS_URL`             | connection string do Redis usada pela fila BullMQ                 |
+| `MOCK_ANALYSIS_API_URL` | URL base da API fake de análise                                   |
 
 Todas as variáveis são lidas e validadas uma única vez na subida do
 processo (`src/config.ts`, com Zod) — um valor ausente ou inválido faz o

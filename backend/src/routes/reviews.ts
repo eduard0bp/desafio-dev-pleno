@@ -23,7 +23,9 @@ reviewsRouter.post('/reviews', async (req, res, next) => {
 
     const mockScenario = req.header('x-mock-scenario') ?? undefined;
     if (mockScenario && !MOCK_SCENARIOS.has(mockScenario)) {
-      throw new ValidationError('x-mock-scenario inválido: valores aceitos são success, slow, server-error, rate-limit');
+      throw new ValidationError(
+        'x-mock-scenario inválido: valores aceitos são success, slow, server-error, rate-limit',
+      );
     }
 
     const { review, created } = await createReview({

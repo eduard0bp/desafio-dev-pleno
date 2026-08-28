@@ -75,7 +75,10 @@ export async function analyzeReview(input: AnalyzeReviewInput): Promise<AnalyzeS
       throw new RetryableAnalysisError(body?.error?.message ?? `HTTP ${response.status}`, retryAfterSeconds);
     }
 
-    throw new NonRetryableAnalysisError(body?.error?.message ?? `HTTP ${response.status}`, body?.error?.code ?? 'UNKNOWN');
+    throw new NonRetryableAnalysisError(
+      body?.error?.message ?? `HTTP ${response.status}`,
+      body?.error?.code ?? 'UNKNOWN',
+    );
   } catch (err) {
     if (err instanceof RetryableAnalysisError || err instanceof NonRetryableAnalysisError) throw err;
     if (err instanceof Error && err.name === 'AbortError') {

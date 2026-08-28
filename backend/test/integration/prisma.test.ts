@@ -25,7 +25,7 @@ describe('Prisma Review model', () => {
     await prisma.review.create({ data: { externalId, companyId: 'c', rating: 3, comment: 'x' } });
 
     await expect(
-      prisma.review.create({ data: { externalId, companyId: 'c', rating: 3, comment: 'y' } })
+      prisma.review.create({ data: { externalId, companyId: 'c', rating: 3, comment: 'y' } }),
     ).rejects.toThrow();
   });
 });

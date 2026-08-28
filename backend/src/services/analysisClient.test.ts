@@ -22,7 +22,7 @@ describe('analyzeReview timeout handling', () => {
             reject(abortError);
           });
         });
-      })
+      }),
     );
 
     const promise = analyzeReview({ reviewId: 'r1', companyId: 'c1', rating: 2, text: 'Demorou muito.' });

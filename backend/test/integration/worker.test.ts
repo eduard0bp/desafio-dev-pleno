@@ -4,7 +4,7 @@ import { prisma } from '../../src/lib/prisma';
 
 vi.mock('../../src/services/analysisClient', async () => {
   const actual = await vi.importActual<typeof import('../../src/services/analysisClient')>(
-    '../../src/services/analysisClient'
+    '../../src/services/analysisClient',
   );
   return { ...actual, analyzeReview: vi.fn() };
 });
@@ -92,7 +92,9 @@ describe('processReviewJob', () => {
     const review = await createTestReview();
     mockedAnalyzeReview.mockRejectedValueOnce(new RetryableAnalysisError('unstable', 2));
 
-    await expect(processReviewJob({ data: { reviewId: review.id }, attemptsMade: 0 })).rejects.toThrow(RetryableAnalysisError);
+    await expect(processReviewJob({ data: { reviewId: review.id }, attemptsMade: 0 })).rejects.toThrow(
+      RetryableAnalysisError,
+    );
 
     const updated = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
     expect(updated.status).toBe('processing');
