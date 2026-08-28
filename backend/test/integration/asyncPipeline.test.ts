@@ -49,4 +49,31 @@ describe('async pipeline (real worker + real queue + real fake-analysis call)', 
 
     await prisma.review.delete({ where: { id: review.id } });
   }, 15000);
+
+  it('marks a review as failed once all retry attempts are exhausted (real worker "failed" handler)', async () => {
+    const review = await prisma.review.create({
+      data: {
+        externalId: `pipeline-${randomUUID()}`,
+        companyId: 'c1',
+        rating: 1,
+        comment: 'Vai falhar de propósito em todas as tentativas.',
+      },
+    });
+
+    // Bypass enqueueReviewJob's default attempts so the test doesn't wait through 5 real backoffs.
+    await reviewQueue.add(
+      'process-review',
+      { reviewId: review.id, mockScenario: 'server-error' },
+      { jobId: review.id, attempts: 2, backoff: { type: 'custom' }, removeOnComplete: 100, removeOnFail: 100 },
+    );
+
+    await waitForStatus(review.id, 'failed', 20000);
+
+    const failed = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
+    expect(failed.status).toBe('failed');
+    expect(failed.attempts).toBe(2);
+    expect(failed.lastError).toBeTruthy();
+
+    await prisma.review.delete({ where: { id: review.id } });
+  }, 25000);
 });
