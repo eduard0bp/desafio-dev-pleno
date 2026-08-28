@@ -1,2 +1,2 @@
-export * from './AvaliacoesPage/AvaliacoesPage';
-export * from './NovaAvaliacaoPage/NovaAvaliacaoPage';
+export * from './ReviewsPage/ReviewsPage';
+export * from './NewReviewPage/NewReviewPage';

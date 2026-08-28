@@ -2,15 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NovaAvaliacaoPage } from './NovaAvaliacaoPage';
+import { NewReviewPage } from './NewReviewPage';
 
-describe('NovaAvaliacaoPage', () => {
+describe('NewReviewPage', () => {
   it('renders the review submission form', () => {
     const queryClient = new QueryClient();
     render(
       <MantineProvider>
         <QueryClientProvider client={queryClient}>
-          <NovaAvaliacaoPage />
+          <NewReviewPage />
         </QueryClientProvider>
       </MantineProvider>
     );

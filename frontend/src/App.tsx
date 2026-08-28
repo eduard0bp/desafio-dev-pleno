@@ -2,7 +2,7 @@ import { AppShell, Burger, Group, Image } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Navigate, Route, Routes } from 'react-router';
 import { SelectedReviewModal, Sidebar } from './components';
-import { AvaliacoesPage, NovaAvaliacaoPage } from './pages';
+import { ReviewsPage, NewReviewPage } from './pages';
 import { SelectedReviewProvider } from './context/SelectedReviewContext';
 import falaeLogo from './assets/falae-logo-full.png';
 
@@ -29,8 +29,8 @@ function AppLayout() {
       <AppShell.Main>
         <Routes>
           <Route path="/" element={<Navigate to="/admin/avaliacoes" replace />} />
-          <Route path="/avaliar" element={<NovaAvaliacaoPage />} />
-          <Route path="/admin/avaliacoes" element={<AvaliacoesPage />} />
+          <Route path="/avaliar" element={<NewReviewPage />} />
+          <Route path="/admin/avaliacoes" element={<ReviewsPage />} />
           <Route path="*" element={<Navigate to="/admin/avaliacoes" replace />} />
         </Routes>
       </AppShell.Main>
