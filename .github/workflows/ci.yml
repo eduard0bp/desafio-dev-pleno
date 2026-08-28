@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: Lint (eslint)
+        run: npm run lint:eslint
+
+      - name: Format check (prettier)
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql://falae:falae@localhost:5432/falae?schema=public
+      REDIS_URL: redis://localhost:6379
+      MOCK_ANALYSIS_API_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check (prettier)
+        run: npm run format:check
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Start Postgres, Redis and the mock analysis API
+        working-directory: .
+        run: docker compose up -d postgres redis mock-analysis-api
+
+      - name: Wait for services to be healthy
+        working-directory: .
+        run: |
+          for i in $(seq 1 30); do
+            unhealthy=$(docker compose ps --format '{{.Health}}' postgres redis mock-analysis-api | grep -vc '^healthy$' || true)
+            if [ "$unhealthy" -eq 0 ]; then
+              echo "All services healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Services did not become healthy in time"
+          docker compose ps
+          docker compose logs
+          exit 1
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Stop services
+        if: always()
+        working-directory: .
+        run: docker compose down -v
