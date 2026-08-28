@@ -16,11 +16,6 @@ reviewsRouter.post('/reviews', async (req, res, next) => {
       throw new ValidationError(parsed.error.issues[0]?.message ?? 'Payload inválido', parsed.error.flatten());
     }
 
-    const idempotencyKey = req.header('idempotency-key');
-    if (idempotencyKey && idempotencyKey !== parsed.data.external_id) {
-      throw new ValidationError('Idempotency-Key deve ser igual a external_id');
-    }
-
     const mockScenario = req.header('x-mock-scenario') ?? undefined;
     if (mockScenario && !MOCK_SCENARIOS.has(mockScenario)) {
       throw new ValidationError(

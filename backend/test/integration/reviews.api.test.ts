@@ -69,13 +69,13 @@ describe('Reviews API', () => {
     expect(job).not.toBeUndefined();
   });
 
-  it('POST /reviews with Idempotency-Key different from external_id returns 400', async () => {
+  it('POST /reviews ignores an Idempotency-Key that differs from external_id (de-dup is via external_id alone)', async () => {
     const response = await request(app)
       .post('/reviews')
-      .set('Idempotency-Key', 'outro-valor')
-      .send({ external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 3, comment: 'ok' });
+      .set('Idempotency-Key', 'outro-valor-qualquer')
+      .send({ external_id: `test-${randomUUID()}`, company_id: 'c1', rating: 3, comment: 'comentário válido' });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(202);
   });
 
   it('GET /reviews lists the created reviews with pagination and counts', async () => {
