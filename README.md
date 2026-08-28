@@ -50,18 +50,33 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
 
 ## Decisões técnicas
 
-- **Idempotência:** `external_id` é a chave única de deduplicação no banco
-  (constraint `UNIQUE` no Postgres via Prisma). Se o header `Idempotency-Key`
-  for enviado, ele precisa ser igual ao `external_id` do corpo — do
-  contrário a API responde `400`. Um `POST` repetido com o mesmo
-  `external_id` retorna a review já existente em vez de criar uma nova.
+- **Idempotência:** a chave única de deduplicação no banco é o par
+  `(company_id, external_id)` (constraint `UNIQUE` composta no Postgres via
+  Prisma), não `external_id` isolado — duas empresas diferentes podem usar
+  o mesmo esquema de identificador de pedido sem colidir. A checagem é
+  feita no nível do banco (tenta o `INSERT`, trata a violação de
+  unicidade), não com um `SELECT` prévio na aplicação, então dois `POST`s
+  concorrentes com o mesmo par são resolvidos de forma correta mesmo sob
+  concorrência real (coberto por teste com `Promise.all`, não só POSTs
+  sequenciais). O header `Idempotency-Key` é aceito mas ignorado — chegou a
+  exigir igualdade com `external_id`, mas isso não adicionava proteção
+  nenhuma além do que a constraint já garante sozinha, então a checagem foi
+  removida. Um `POST` repetido com o mesmo par retorna a review já
+  existente em vez de criar uma nova.
 - **Fila:** BullMQ + Redis. O worker roda em um processo separado
   (`npm run dev:worker` / `start:worker`, e um serviço próprio no
   Docker Compose) e consome os jobs publicados pela API. Backoff
   exponencial com teto de 30s, exceto quando o `Retry-After` do serviço
-  externo pede um valor maior — nesse caso, respeitamos o valor externo
-  (`computeBackoffDelayMs` em `backend/src/lib/retry.ts`), com até 5
-  tentativas antes de marcar a review como `failed`.
+  externo pede um valor maior — nesse caso, respeitamos o valor externo, com
+  um teto próprio de 60s para não deixar uma resposta externa
+  mal-comportada travar a próxima tentativa por tempo arbitrário
+  (`computeBackoffDelayMs` em `backend/src/lib/retry.ts`). Até
+  `REVIEW_MAX_ATTEMPTS` tentativas (padrão 5, validado em
+  `backend/src/config.ts` como as demais variáveis de ambiente) antes de
+  marcar a review como `failed` — coberto por um teste de ponta a ponta
+  real (worker + fila + API fake) que força o esgotamento das tentativas, e
+  por outro que força uma falha real seguida de recuperação real via
+  retry, não só o caminho de sucesso ou a lógica isolada.
 - **Atualização de status na UI:** polling (TanStack Query) a cada 3
   segundos enquanto houver avaliações `pending`/`processing`, tanto na
   lista quanto no painel de detalhe; SSE/WebSocket ficou de fora por tempo
@@ -178,6 +193,18 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   transacional de verdade (isso exigiria um outbox pattern), mas cobre o
   caso real de crash entre os dois passos sem a complexidade de uma
   tabela de outbox.
+- **Efeito duplicado em job "stalled" — parcialmente coberto.**
+  `processReviewJob` agora ignora um job reentregue para uma review que já
+  está `completed`/`failed` (guarda contra o BullMQ redespachar um job cujo
+  efeito colateral — chamada externa, gravação no banco, alerta de review
+  negativa — já aconteceu de verdade). Isso **não** fecha a janela mais
+  estreita em que o processo cai exatamente entre a análise externa
+  retornar sucesso e essa gravação persistir: nesse instante a review ainda
+  está `processing` sem análise salva, indistinguível de uma review que
+  nunca foi processada, então uma reentrega nesse ponto específico ainda
+  chama a API externa de novo e pode disparar o alerta de negativa outra
+  vez. Fechar esse caso por completo exigiria persistir um marcador antes
+  da chamada externa (ex.: um `analysis_started_at`), não implementado.
 - Sem SSE/WebSocket — a atualização de status na tela depende de polling.
 - `VITE_API_URL` é definida em build time da imagem Docker do frontend
   (`http://localhost:3000`, veja `compose.yaml`), não em runtime. Isso
@@ -192,7 +219,7 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
 
 | Método | Rota | Descrição |
 | --- | --- | --- |
-| `POST` | `/reviews` | Cria uma review e enfileira o job de análise. Aceita `Idempotency-Key` (deve ser igual a `external_id`, se enviado). |
+| `POST` | `/reviews` | Cria uma review e enfileira o job de análise. Deduplicação é por `(company_id, external_id)`; o header `Idempotency-Key` é aceito mas ignorado. |
 | `GET` | `/reviews` | Lista reviews com paginação e filtros (`page`, `pageSize`, `status`, `minRating`, `search`, `dateFrom`, `dateTo`). Responde `{ data, pagination, counts }`. |
 | `GET` | `/reviews/:id` | Detalhe de uma review. |
 | `POST` | `/reviews/:id/retry` | Reenfileira uma review `failed` para reprocessamento manual. |
