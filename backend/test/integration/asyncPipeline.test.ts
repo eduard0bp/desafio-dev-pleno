@@ -76,4 +76,43 @@ describe('async pipeline (real worker + real queue + real fake-analysis call)', 
 
     await prisma.review.delete({ where: { id: review.id } });
   }, 25000);
+
+  it('recovers via real retries: fails against the real mock API, then completes once it stops failing', async () => {
+    const review = await prisma.review.create({
+      data: {
+        externalId: `pipeline-${randomUUID()}`,
+        companyId: 'c1',
+        rating: 3,
+        comment: 'Vai falhar uma vez de verdade e depois se recuperar.',
+      },
+    });
+
+    // No function is mocked here: x-mock-scenario: server-error makes the *real* mock API
+    // return a real 503 on the first attempt. Once BullMQ's real retry fires the 'failed'
+    // event for that attempt, we flip the job's own data to mockScenario: 'success' via
+    // BullMQ's public updateData API — same as an operator fixing the external condition
+    // between retries — so the *next real attempt* hits the real API again and succeeds.
+    function onFailed(job: { data: ReviewJobData; attemptsMade: number; updateData: (data: ReviewJobData) => Promise<void> }) {
+      if (job.data.reviewId === review.id && job.attemptsMade === 1) {
+        void job.updateData({ ...job.data, mockScenario: 'success' });
+        worker.off('failed', onFailed);
+      }
+    }
+    worker.on('failed', onFailed);
+
+    await reviewQueue.add(
+      'process-review',
+      { reviewId: review.id, mockScenario: 'server-error' },
+      { jobId: review.id, attempts: 3, backoff: { type: 'custom' }, removeOnComplete: 100, removeOnFail: 100 },
+    );
+
+    await waitForStatus(review.id, 'completed', 20000);
+
+    const completed = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
+    expect(completed.status).toBe('completed');
+    expect(completed.attempts).toBe(2);
+    expect(completed.analysis).toBeTruthy();
+
+    await prisma.review.delete({ where: { id: review.id } });
+  }, 25000);
 });
