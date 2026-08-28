@@ -21,7 +21,7 @@ export async function createReview(input: CreateReviewInput): Promise<CreateRevi
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       const existing = await prisma.review.findUniqueOrThrow({
-        where: { externalId: input.externalId },
+        where: { companyId_externalId: { companyId: input.companyId, externalId: input.externalId } },
       });
       return { review: existing, created: false };
     }

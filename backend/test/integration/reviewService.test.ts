@@ -32,6 +32,19 @@ describe('reviewService', () => {
     expect(all).toHaveLength(1);
   });
 
+  it('two different companies using the same external_id are not treated as duplicates', async () => {
+    const externalId = `test-${randomUUID()}`;
+    const forCompanyA = await createReview({ externalId, companyId: `test-company-a-${randomUUID()}`, rating: 5, comment: 'A' });
+    const forCompanyB = await createReview({ externalId, companyId: `test-company-b-${randomUUID()}`, rating: 1, comment: 'B' });
+
+    expect(forCompanyA.created).toBe(true);
+    expect(forCompanyB.created).toBe(true);
+    expect(forCompanyB.review.id).not.toBe(forCompanyA.review.id);
+
+    const all = await prisma.review.findMany({ where: { externalId } });
+    expect(all).toHaveLength(2);
+  });
+
   it('lists reviews ordered by created_at desc', async () => {
     const idA = `test-${randomUUID()}`;
     const idB = `test-${randomUUID()}`;

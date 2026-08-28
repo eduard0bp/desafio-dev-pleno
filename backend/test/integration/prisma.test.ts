@@ -16,16 +16,26 @@ describe('Prisma Review model', () => {
     expect(created.status).toBe('pending');
     expect(created.attempts).toBe(0);
 
-    const found = await prisma.review.findUnique({ where: { externalId } });
+    const found = await prisma.review.findUnique({
+      where: { companyId_externalId: { companyId: 'company-1', externalId } },
+    });
     expect(found?.id).toBe(created.id);
   });
 
-  it('prevents duplicate external_id', async () => {
+  it('prevents duplicate (company_id, external_id) pairs', async () => {
     const externalId = `test-${randomUUID()}`;
     await prisma.review.create({ data: { externalId, companyId: 'c', rating: 3, comment: 'x' } });
 
     await expect(
       prisma.review.create({ data: { externalId, companyId: 'c', rating: 3, comment: 'y' } }),
     ).rejects.toThrow();
+  });
+
+  it('allows the same external_id for two different companies', async () => {
+    const externalId = `test-${randomUUID()}`;
+    const companyA = await prisma.review.create({ data: { externalId, companyId: 'company-a', rating: 3, comment: 'x' } });
+    const companyB = await prisma.review.create({ data: { externalId, companyId: 'company-b', rating: 3, comment: 'y' } });
+
+    expect(companyB.id).not.toBe(companyA.id);
   });
 });
