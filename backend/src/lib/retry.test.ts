@@ -38,4 +38,8 @@ describe('computeBackoffDelayMs', () => {
   it('caps at 30s', () => {
     expect(computeBackoffDelayMs(10)).toBe(30000);
   });
+
+  it('caps an excessively large retryAfterSeconds at 60s instead of honoring it verbatim', () => {
+    expect(computeBackoffDelayMs(1, 3600)).toBe(60000);
+  });
 });
