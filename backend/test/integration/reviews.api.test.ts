@@ -49,6 +49,26 @@ describe('Reviews API', () => {
     expect(all).toHaveLength(1);
   });
 
+  it('two concurrent POST /reviews with the same external_id only create one review and one job', async () => {
+    const externalId = `test-${randomUUID()}`;
+    const payload = { external_id: externalId, company_id: 'c1', rating: 4, comment: 'Bom' };
+
+    const [first, second] = await Promise.all([
+      request(app).post('/reviews').send(payload),
+      request(app).post('/reviews').send(payload),
+    ]);
+
+    expect(first.status).toBe(202);
+    expect(second.status).toBe(202);
+    expect(first.body.id).toBe(second.body.id);
+
+    const all = await prisma.review.findMany({ where: { externalId } });
+    expect(all).toHaveLength(1);
+
+    const job = await reviewQueue.getJob(all[0]!.id);
+    expect(job).not.toBeUndefined();
+  });
+
   it('POST /reviews with Idempotency-Key different from external_id returns 400', async () => {
     const response = await request(app)
       .post('/reviews')
