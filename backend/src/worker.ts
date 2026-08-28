@@ -18,6 +18,16 @@ export async function processReviewJob(job: JobLike): Promise<void> {
   const review = await prisma.review.findUniqueOrThrow({ where: { id: job.data.reviewId } });
   const requestId = job.data.requestId;
 
+  if (review.status === 'completed' || review.status === 'failed') {
+    log('info', 'review_processing_skipped_already_terminal', {
+      reviewId: review.id,
+      externalId: review.externalId,
+      status: review.status,
+      requestId,
+    });
+    return;
+  }
+
   await prisma.review.update({
     where: { id: review.id },
     data: { status: 'processing', attempts: { increment: 1 } },

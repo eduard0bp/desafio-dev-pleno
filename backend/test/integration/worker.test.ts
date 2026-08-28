@@ -100,4 +100,39 @@ describe('processReviewJob', () => {
     expect(updated.status).toBe('processing');
     expect(updated.lastError).toMatchObject({ message: 'unstable' });
   });
+
+  it('skips reprocessing a review that is already completed (stalled job redelivered)', async () => {
+    const review = await createTestReview();
+    await prisma.review.update({
+      where: { id: review.id },
+      data: {
+        status: 'completed',
+        analysis: { sentiment: 'negative', category: 'delivery', confidence: 0.9, matched_keywords: [] },
+        attempts: 1,
+        processedAt: new Date(),
+      },
+    });
+
+    await processReviewJob({ data: { reviewId: review.id }, attemptsMade: 1 });
+
+    expect(mockedAnalyzeReview).not.toHaveBeenCalled();
+    const updated = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
+    expect(updated.status).toBe('completed');
+    expect(updated.attempts).toBe(1);
+  });
+
+  it('skips reprocessing a review that is already failed (stalled job redelivered)', async () => {
+    const review = await createTestReview();
+    await prisma.review.update({
+      where: { id: review.id },
+      data: { status: 'failed', attempts: 5, lastError: { message: 'esgotou as tentativas' } },
+    });
+
+    await processReviewJob({ data: { reviewId: review.id }, attemptsMade: 5 });
+
+    expect(mockedAnalyzeReview).not.toHaveBeenCalled();
+    const updated = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
+    expect(updated.status).toBe('failed');
+    expect(updated.attempts).toBe(5);
+  });
 });
