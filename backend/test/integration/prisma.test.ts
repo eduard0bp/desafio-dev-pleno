@@ -33,8 +33,12 @@ describe('Prisma Review model', () => {
 
   it('allows the same external_id for two different companies', async () => {
     const externalId = `test-${randomUUID()}`;
-    const companyA = await prisma.review.create({ data: { externalId, companyId: 'company-a', rating: 3, comment: 'x' } });
-    const companyB = await prisma.review.create({ data: { externalId, companyId: 'company-b', rating: 3, comment: 'y' } });
+    const companyA = await prisma.review.create({
+      data: { externalId, companyId: 'company-a', rating: 3, comment: 'x' },
+    });
+    const companyB = await prisma.review.create({
+      data: { externalId, companyId: 'company-b', rating: 3, comment: 'y' },
+    });
 
     expect(companyB.id).not.toBe(companyA.id);
   });

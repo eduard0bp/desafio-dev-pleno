@@ -34,8 +34,18 @@ describe('reviewService', () => {
 
   it('two different companies using the same external_id are not treated as duplicates', async () => {
     const externalId = `test-${randomUUID()}`;
-    const forCompanyA = await createReview({ externalId, companyId: `test-company-a-${randomUUID()}`, rating: 5, comment: 'A' });
-    const forCompanyB = await createReview({ externalId, companyId: `test-company-b-${randomUUID()}`, rating: 1, comment: 'B' });
+    const forCompanyA = await createReview({
+      externalId,
+      companyId: `test-company-a-${randomUUID()}`,
+      rating: 5,
+      comment: 'A',
+    });
+    const forCompanyB = await createReview({
+      externalId,
+      companyId: `test-company-b-${randomUUID()}`,
+      rating: 1,
+      comment: 'B',
+    });
 
     expect(forCompanyA.created).toBe(true);
     expect(forCompanyB.created).toBe(true);

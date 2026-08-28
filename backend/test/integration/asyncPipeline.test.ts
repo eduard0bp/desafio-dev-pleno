@@ -92,7 +92,11 @@ describe('async pipeline (real worker + real queue + real fake-analysis call)', 
     // event for that attempt, we flip the job's own data to mockScenario: 'success' via
     // BullMQ's public updateData API — same as an operator fixing the external condition
     // between retries — so the *next real attempt* hits the real API again and succeeds.
-    function onFailed(job: { data: ReviewJobData; attemptsMade: number; updateData: (data: ReviewJobData) => Promise<void> }) {
+    function onFailed(job: {
+      data: ReviewJobData;
+      attemptsMade: number;
+      updateData: (data: ReviewJobData) => Promise<void>;
+    }) {
       if (job.data.reviewId === review.id && job.attemptsMade === 1) {
         void job.updateData({ ...job.data, mockScenario: 'success' });
         worker.off('failed', onFailed);
