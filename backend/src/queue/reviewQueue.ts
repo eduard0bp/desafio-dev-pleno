@@ -1,5 +1,6 @@
 import { Queue } from 'bullmq';
 import { connection } from '../lib/redis';
+import { config } from '../config';
 
 export const REVIEW_QUEUE_NAME = 'review-processing';
 
@@ -14,7 +15,7 @@ export const reviewQueue = new Queue<ReviewJobData>(REVIEW_QUEUE_NAME, { connect
 export async function enqueueReviewJob(data: ReviewJobData): Promise<void> {
   await reviewQueue.add('process-review', data, {
     jobId: data.reviewId,
-    attempts: 5,
+    attempts: config.REVIEW_MAX_ATTEMPTS,
     backoff: { type: 'custom' },
     removeOnComplete: 100,
     removeOnFail: 100,

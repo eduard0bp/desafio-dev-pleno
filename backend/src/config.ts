@@ -5,6 +5,11 @@ const envSchema = z.object({
   WORKER_PORT: z.coerce.number('WORKER_PORT deve ser um número').int().positive().default(3001),
   REDIS_URL: z.string('REDIS_URL deve ser uma string').min(1).default('redis://localhost:6379'),
   MOCK_ANALYSIS_API_URL: z.string('MOCK_ANALYSIS_API_URL deve ser uma string').min(1).default('http://localhost:4000'),
+  REVIEW_MAX_ATTEMPTS: z
+    .coerce.number('REVIEW_MAX_ATTEMPTS deve ser um número')
+    .int()
+    .positive()
+    .default(5),
 });
 
 function loadConfig() {
