@@ -1,1 +1,1 @@
-export * from './reviewsApi';
+export * from './reviews';
