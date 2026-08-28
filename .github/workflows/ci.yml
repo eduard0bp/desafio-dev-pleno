@@ -38,11 +38,8 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      - name: Lint (oxlint)
+      - name: Lint
         run: npm run lint
-
-      - name: Lint (eslint)
-        run: npm run lint:eslint
 
       - name: Format check (prettier)
         run: npm run format:check
