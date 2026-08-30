@@ -27,7 +27,9 @@ describe('NotificationBell', () => {
     const spy = vi.spyOn(api, 'listReviews').mockResolvedValue(getMockCoreListReviewsResult({ data: [] }));
     renderBell();
     await waitFor(() =>
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ sentiment: 'negative', isRead: false, pageSize: 100 })),
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ sentiment: 'negative', isRead: false, pageSize: 100 }),
+      ),
     );
   });
 
