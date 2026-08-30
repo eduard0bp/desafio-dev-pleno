@@ -15,8 +15,8 @@ describe('getReviewsRefetchInterval', () => {
     expect(getReviewsRefetchInterval(undefined)).toBe(false);
   });
 
-  it('returns false when nothing is pending or processing', () => {
-    expect(getReviewsRefetchInterval(result({ completed: 3, failed: 1 }))).toBe(false);
+  it('falls back to a slower baseline poll when nothing is pending or processing, so newly created reviews are still picked up', () => {
+    expect(getReviewsRefetchInterval(result({ completed: 3, failed: 1 }))).toBe(15000);
   });
 
   it('returns 3000 when something is pending', () => {

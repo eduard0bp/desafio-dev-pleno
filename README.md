@@ -79,8 +79,12 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   retry, não só o caminho de sucesso ou a lógica isolada.
 - **Atualização de status na UI:** polling (TanStack Query) a cada 3
   segundos enquanto houver avaliações `pending`/`processing`, tanto na
-  lista quanto no painel de detalhe; SSE/WebSocket ficou de fora por tempo
-  — ver limitações abaixo.
+  lista quanto no painel de detalhe. Sem nenhuma em andamento, a lista
+  recua para um polling de 15 segundos em vez de parar por completo —
+  reviews criadas fora do fluxo da própria UI (ex.: `POST /reviews` vindo
+  de outro cliente) ainda precisam ser descobertas de algum jeito, já que
+  não há invalidação de cache para algo que a aba não sabe que existe;
+  SSE/WebSocket ficou de fora por tempo — ver limitações abaixo.
 - **Navegação por rotas:** `react-router` separa o cadastro (`/avaliar`) do
   monitoramento (`/admin/avaliacoes`, padrão; `/` redireciona para lá), com
   a sidebar dirigindo a navegação real (inclusive com fallback SPA no
