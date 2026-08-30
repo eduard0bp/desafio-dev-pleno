@@ -58,11 +58,10 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   unicidade), não com um `SELECT` prévio na aplicação, então dois `POST`s
   concorrentes com o mesmo par são resolvidos de forma correta mesmo sob
   concorrência real (coberto por teste com `Promise.all`, não só POSTs
-  sequenciais). O header `Idempotency-Key` é aceito mas ignorado — chegou a
-  exigir igualdade com `external_id`, mas isso não adicionava proteção
-  nenhuma além do que a constraint já garante sozinha, então a checagem foi
-  removida. Um `POST` repetido com o mesmo par retorna a review já
-  existente em vez de criar uma nova.
+  sequenciais). O header `Idempotency-Key` é aceito mas ignorado: validar
+  igualdade com `external_id` não acrescentaria proteção nenhuma além da
+  que a constraint do banco já garante sozinha. Um `POST` repetido com o
+  mesmo par retorna a review já existente em vez de criar uma nova.
 - **Fila:** BullMQ + Redis. O worker roda em um processo separado
   (`npm run dev:worker` / `start:worker`, e um serviço próprio no
   Docker Compose) e consome os jobs publicados pela API. Backoff
@@ -110,6 +109,13 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   arquivo (`fileParallelism: false` no `vitest.config.ts`) para evitar que
   a limpeza de um arquivo apague dados que outro arquivo está usando.
   Detalhado em [`backend/README.md`](backend/README.md).
+- **Fila isolada nos testes de integração:** a suíte enfileira jobs reais
+  na fila real (`review-processing`) para exercitar o worker de verdade,
+  mas conecta num banco Redis lógico dedicado (`/1`, via
+  `test/integration/setup.ts`) em vez do banco padrão (`/0`) usado pelo
+  worker do `docker compose`. Assim os testes continuam confiáveis mesmo
+  rodando com a stack completa no ar, sem o worker do container disputar
+  os mesmos jobs com o worker do teste.
 - **`/health` verifica dependências reais:** o endpoint testa `SELECT 1`
   no Postgres e `PING` no Redis (`backend/src/lib/health.ts`) em vez de
   responder `{status:"ok"}` de forma estática — retorna `503` e
@@ -168,16 +174,16 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   configurado com o locale `dayjs` `pt-br`, então o calendário de filtro
   por período usa nomes de mês/dia em português em vez do padrão em
   inglês da biblioteca.
-- **Teste e2e reescrito seguindo Page Object Model, sem tocar no banco:**
-  cada página/componente da UI tem seu próprio objeto Playwright em
+- **Testes e2e seguindo Page Object Model, sem tocar no banco:** cada
+  página/componente da UI tem seu próprio objeto Playwright em
   `frontend/e2e/pages/`/`frontend/e2e/components/` (rotas, seletores,
   ações), com os specs organizados por página em vez de por
   funcionalidade. A suíte nunca acessa o Postgres diretamente — todo dado
   de teste é criado através do fluxo real de UI (`POST /reviews` via
-  formulário), e nada é limpo ao final; assim como o teste original, ela
-  tolera tanto "Concluído" quanto "Falhou" como status terminal válido
-  para os casos que dependem do resultado da API fake de análise, cujas
-  falhas periódicas (`FAIL_EVERY_N`) são propositais.
+  formulário), e nada é limpo ao final; ela tolera tanto "Concluído"
+  quanto "Falhou" como status terminal válido para os casos que dependem
+  do resultado da API fake de análise, cujas falhas periódicas
+  (`FAIL_EVERY_N`) são propositais.
 - **Uso de IA:** o Claude Code (Anthropic) foi usado do início ao fim deste
   desafio — para discutir a arquitetura, escrever a spec técnica, planejar
   as tasks, gerar a base de código (rotas, worker, fila, testes unitários,
@@ -198,7 +204,7 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
   caso real de crash entre os dois passos sem a complexidade de uma
   tabela de outbox.
 - **Efeito duplicado em job "stalled" — parcialmente coberto.**
-  `processReviewJob` agora ignora um job reentregue para uma review que já
+  `processReviewJob` ignora um job reentregue para uma review que já
   está `completed`/`failed` (guarda contra o BullMQ redespachar um job cujo
   efeito colateral — chamada externa, gravação no banco, alerta de review
   negativa — já aconteceu de verdade). Isso **não** fecha a janela mais
