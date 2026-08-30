@@ -56,17 +56,19 @@ describe('reviewService', () => {
   });
 
   it('lists reviews ordered by created_at desc', async () => {
+    const marker = randomUUID();
+    const companyId = `OrderCo-${marker}`;
     const idA = `test-${randomUUID()}`;
     const idB = `test-${randomUUID()}`;
-    const { review: reviewA } = await createReview({ externalId: idA, companyId: 'c', rating: 1, comment: 'a' });
-    const { review: reviewB } = await createReview({ externalId: idB, companyId: 'c', rating: 1, comment: 'b' });
+    const { review: reviewA } = await createReview({ externalId: idA, companyId, rating: 1, comment: 'a' });
+    const { review: reviewB } = await createReview({ externalId: idB, companyId, rating: 1, comment: 'b' });
 
     const earlier = new Date('2026-01-01T00:00:00.000Z');
     const later = new Date('2026-01-01T00:00:10.000Z');
     await prisma.review.update({ where: { id: reviewA.id }, data: { createdAt: earlier } });
     await prisma.review.update({ where: { id: reviewB.id }, data: { createdAt: later } });
 
-    const { data } = await listReviews({ page: 1, pageSize: 100 });
+    const { data } = await listReviews({ page: 1, pageSize: 100, search: `orderco-${marker}` });
     const indexA = data.findIndex((r) => r.externalId === idA);
     const indexB = data.findIndex((r) => r.externalId === idB);
 
