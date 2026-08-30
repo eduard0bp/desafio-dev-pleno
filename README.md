@@ -50,140 +50,51 @@ COUNT=50 FAIL_COUNT=5 API_URL=http://localhost:3000 ./scripts/seed-reviews.sh
 
 ## Decisões técnicas
 
-- **Idempotência:** a chave única de deduplicação no banco é o par
-  `(company_id, external_id)` (constraint `UNIQUE` composta no Postgres via
-  Prisma), não `external_id` isolado — duas empresas diferentes podem usar
-  o mesmo esquema de identificador de pedido sem colidir. A checagem é
-  feita no nível do banco (tenta o `INSERT`, trata a violação de
-  unicidade), não com um `SELECT` prévio na aplicação, então dois `POST`s
-  concorrentes com o mesmo par são resolvidos de forma correta mesmo sob
-  concorrência real (coberto por teste com `Promise.all`, não só POSTs
-  sequenciais). O header `Idempotency-Key` é aceito mas ignorado: validar
-  igualdade com `external_id` não acrescentaria proteção nenhuma além da
-  que a constraint do banco já garante sozinha. Um `POST` repetido com o
-  mesmo par retorna a review já existente em vez de criar uma nova.
-- **Fila:** BullMQ + Redis. O worker roda em um processo separado
-  (`npm run dev:worker` / `start:worker`, e um serviço próprio no
-  Docker Compose) e consome os jobs publicados pela API. Backoff
-  exponencial com teto de 30s, exceto quando o `Retry-After` do serviço
-  externo pede um valor maior — nesse caso, respeitamos o valor externo, com
-  um teto próprio de 60s para não deixar uma resposta externa
-  mal-comportada travar a próxima tentativa por tempo arbitrário
-  (`computeBackoffDelayMs` em `backend/src/lib/retry.ts`). Até
-  `REVIEW_MAX_ATTEMPTS` tentativas (padrão 5, validado em
-  `backend/src/config.ts` como as demais variáveis de ambiente) antes de
-  marcar a review como `failed` — coberto por um teste de ponta a ponta
-  real (worker + fila + API fake) que força o esgotamento das tentativas, e
-  por outro que força uma falha real seguida de recuperação real via
-  retry, não só o caminho de sucesso ou a lógica isolada.
-- **Atualização de status na UI:** polling (TanStack Query) a cada 3
-  segundos enquanto houver avaliações `pending`/`processing`, tanto na
-  lista quanto no painel de detalhe. Sem nenhuma em andamento, a lista
-  recua para um polling de 15 segundos em vez de parar por completo —
-  reviews criadas fora do fluxo da própria UI (ex.: `POST /reviews` vindo
-  de outro cliente) ainda precisam ser descobertas de algum jeito, já que
-  não há invalidação de cache para algo que a aba não sabe que existe;
-  SSE/WebSocket ficou de fora por tempo — ver limitações abaixo.
-- **Navegação por rotas:** `react-router` separa o cadastro (`/avaliar`) do
-  monitoramento (`/admin/avaliacoes`, padrão; `/` redireciona para lá), com
-  a sidebar dirigindo a navegação real (inclusive com fallback SPA no
-  `serve` do container do frontend, para acessar qualquer rota direto pela
-  URL funcionar).
-- **Filtros e paginação no back-end:** `GET /reviews` aceita `page`,
-  `pageSize`, `status`, `minRating`, `search`, `dateFrom` e `dateTo` como
-  query params e responde `{ data, pagination, counts }` — `counts` reflete
-  os demais filtros aplicados, mas ignora o próprio `status`, para que os
-  chips de status continuem mostrando a contagem correta de cada estado
-  mesmo com um deles selecionado. Decisão: aproximar o comportamento de uma
-  aplicação real (lista grande, filtro que não depende de carregar tudo no
-  cliente) em vez de filtrar em memória no frontend.
-- **Layout responsivo:** `AppShell` do Mantine com sidebar colapsável em
-  menu hambúrguer abaixo do breakpoint `sm`, tabela com scroll horizontal
-  em telas estreitas e filtros que empilham em vez de espremer.
-- **Versão do Prisma mantida na major 6:** `@prisma/client`/`prisma` foram
-  fixados em `^6.19.3` em vez de "latest" — decisão deliberada para evitar
-  as mudanças de breaking change do Prisma 7+/8+ no meio do desafio.
-  Detalhado também em [`backend/README.md`](backend/README.md).
-- **Testes de integração sequenciais:** os testes de integração do backend
-  compartilham um único Postgres real, então rodam sem paralelismo de
-  arquivo (`fileParallelism: false` no `vitest.config.ts`) para evitar que
-  a limpeza de um arquivo apague dados que outro arquivo está usando.
-  Detalhado em [`backend/README.md`](backend/README.md).
-- **Fila isolada nos testes de integração:** a suíte enfileira jobs reais
-  na fila real (`review-processing`) para exercitar o worker de verdade,
-  mas conecta num banco Redis lógico dedicado (`/1`, via
-  `test/integration/setup.ts`) em vez do banco padrão (`/0`) usado pelo
-  worker do `docker compose`. Assim os testes continuam confiáveis mesmo
-  rodando com a stack completa no ar, sem o worker do container disputar
-  os mesmos jobs com o worker do teste.
-- **`/health` verifica dependências reais:** o endpoint testa `SELECT 1`
-  no Postgres e `PING` no Redis (`backend/src/lib/health.ts`) em vez de
-  responder `{status:"ok"}` de forma estática — retorna `503` e
-  `status:"degraded"` se qualquer um dos dois estiver fora do ar. Tanto a
-  API quanto o worker expõem esse endpoint (o worker numa porta HTTP
-  própria, `WORKER_PORT`, sem depender do Express), e é isso que os
-  `healthcheck` de ambos os serviços no `compose.yaml` usam — refletindo o
-  estado real das dependências dos dois processos, não só da API.
-- **Configuração centralizada e validada:** variáveis de ambiente são lidas
-  uma única vez, na subida do processo, e validadas com Zod
-  (`backend/src/config.ts`) — em vez de `process.env.X` espalhado pelas
-  rotas/worker. Um valor inválido ou ausente falha rápido, na subida, em
-  vez de gerar um erro obscuro no meio de uma requisição.
-- **Erros HTTP tipados:** as rotas lançam `ValidationError`,
-  `NotFoundError` e `ConflictError` (`backend/src/errors.ts`), capturados
-  de forma centralizada pelo middleware de erro do Express — em vez de
-  cada rota montar sua própria resposta de erro manualmente. O formato da
-  resposta JSON (`{error, message}` com o status correspondente) não
-  mudou, só a forma como é produzido.
-- **Correlação de logs entre API e worker:** o `request_id` gerado pelo
-  middleware de log da API é propagado no payload do job da fila
-  (`ReviewJobData.requestId`) e aparece nos logs do worker — dá pra seguir
-  uma review específica do `POST /reviews` até o processamento assíncrono
-  olhando um único identificador nos dois processos.
-- **Desligamento gracioso (`SIGTERM`):** tanto a API quanto o worker
-  tratam `SIGTERM` — a API para de aceitar novas conexões e espera as em
-  andamento terminarem (`server.close()`); o worker fecha a conexão com a
-  fila, limpa o intervalo de reconciliação e fecha seu servidor de health
-  antes de sair. Evita interromper uma requisição ou um job no meio da
-  execução durante um deploy/restart.
-- **Organização por camada no backend:** `lib/` para infraestrutura
-  (Prisma, Redis, health, retry), `jobs/` para processos de background
-  (reconciliação), `services/` para lógica de domínio (reviews, alertas),
-  `mappers/` para tradução entre modelo do banco e resposta da API. Os
-  testes unitários ficam ao lado do arquivo que testam
-  (`src/**/*.test.ts`), no mesmo padrão do frontend, em vez de uma árvore
-  `test/unit/` espelhada — só os testes de integração (que dependem de
-  Postgres/Redis reais) ficam em `test/integration/`.
-- **Sino de notificações:** a UI faz polling de reviews com sentimento
-  negativo e ainda não lidas (`is_read` no banco); o sino mostra a
-  contagem e, ao abrir um item, marca a review como lida
-  (`POST /reviews/:id/read`) para que ela saia da lista — sem exigir
-  SSE/WebSocket, já que o polling existente já traz a informação
-  necessária.
-- **Reprocessamento manual:** reviews `failed` podem ser reenviadas para a
-  fila por um botão de retry na lista (endpoint dedicado no backend), sem
-  esperar o job de reconciliação — útil quando o usuário já sabe que a
-  causa da falha foi resolvida (ex.: instabilidade temporária da API
-  externa).
-- **Filtro por sentimento/nota mínima e ação por status:** a coluna Ações
-  mostra um botão de "ver detalhes" (ícone de olho) só para reviews
-  `completed`, e o botão de retry só para `failed` — nunca os dois ao
-  mesmo tempo, já que cada review só está em um dos dois estados
-  terminais.
-- **pt-BR nos componentes de data:** o `DatesProvider` do Mantine é
-  configurado com o locale `dayjs` `pt-br`, então o calendário de filtro
-  por período usa nomes de mês/dia em português em vez do padrão em
-  inglês da biblioteca.
-- **Testes e2e seguindo Page Object Model, sem tocar no banco:** cada
-  página/componente da UI tem seu próprio objeto Playwright em
-  `frontend/e2e/pages/`/`frontend/e2e/components/` (rotas, seletores,
-  ações), com os specs organizados por página em vez de por
-  funcionalidade. A suíte nunca acessa o Postgres diretamente — todo dado
-  de teste é criado através do fluxo real de UI (`POST /reviews` via
-  formulário), e nada é limpo ao final; ela tolera tanto "Concluído"
-  quanto "Falhou" como status terminal válido para os casos que dependem
-  do resultado da API fake de análise, cujas falhas periódicas
-  (`FAIL_EVERY_N`) são propositais.
+- **Idempotência:** deduplicação pela constraint `UNIQUE(company_id,
+  external_id)` no Postgres, checada no `INSERT` em vez de um `SELECT`
+  prévio — resolve corretamente mesmo sob `POST`s concorrentes reais
+  (testado com `Promise.all`). Duas empresas podem usar o mesmo
+  `external_id` sem colidir. `Idempotency-Key` é aceito mas ignorado: a
+  constraint já cobre a garantia sozinha. Um `POST` repetido retorna a
+  review existente em vez de criar outra.
+- **Fila e retries:** BullMQ + Redis, worker em processo separado.
+  Backoff exponencial com teto de 30s, respeitando um `Retry-After` maior
+  do serviço externo até um teto próprio de 60s (`computeBackoffDelayMs`
+  em `backend/src/lib/retry.ts`). Até `REVIEW_MAX_ATTEMPTS` tentativas
+  (padrão 5) antes de marcar `failed` — coberto por testes de ponta a
+  ponta reais (worker + fila + API fake) que forçam esgotamento e
+  recuperação via retry, não só o caminho de sucesso.
+- **Atualização de status na UI:** polling a cada 3s enquanto há
+  `pending`/`processing`, caindo para 15s quando ocioso em vez de parar —
+  reviews criadas fora do fluxo da própria aba (outro cliente batendo em
+  `POST /reviews`) ainda precisam ser descobertas. SSE/WebSocket ficou de
+  fora por tempo — ver limitações.
+- **Filtros, paginação e busca:** `GET /reviews` aceita `page`,
+  `pageSize`, `status`, `minRating`, `search`, `dateFrom`, `dateTo` e
+  responde `{ data, pagination, counts }`; `counts` ignora o próprio
+  filtro de `status` para os chips continuarem com a contagem correta de
+  cada estado mesmo com um deles selecionado.
+- **Testes de integração:** rodam contra Postgres/Redis reais, sem
+  paralelismo entre arquivos (`fileParallelism: false`) para não haver
+  disputa por dados, e num banco Redis lógico dedicado (`/1`) para não
+  competir por jobs com o worker do `docker compose` caso a stack esteja
+  no ar ao mesmo tempo. Detalhado em [`backend/README.md`](backend/README.md).
+- **Confiabilidade operacional:** `/health` testa Postgres e Redis de
+  verdade (exposto pela API e pelo worker, cada um com sua porta), e o
+  `request_id` de cada requisição é propagado até os logs do worker —
+  dá pra seguir uma review do `POST` até o processamento assíncrono.
+- **Reconciliação:** sem garantia transacional entre persistir a review e
+  publicar o job, um job a cada 60s reenfileira reviews `pending` sem job
+  correspondente há mais de 2 minutos — cobre o caso de crash entre os
+  dois passos. Ver limitações para o que ainda não fecha.
+- **Sino de notificações e reprocessamento manual:** a UI faz polling de
+  reviews negativas não lidas e marca como lida ao abrir uma; reviews
+  `failed` podem ser reenviadas para a fila por um botão de retry, sem
+  esperar a reconciliação.
+- **Testes e2e (Playwright, Page Object Model):** cada página/componente
+  tem seu objeto em `frontend/e2e/pages/`/`frontend/e2e/components/`; a
+  suíte nunca toca o Postgres diretamente — todo dado de teste é criado
+  pelo fluxo real de UI.
 - **Uso de IA:** o Claude Code (Anthropic) foi usado do início ao fim deste
   desafio — para discutir a arquitetura, escrever a spec técnica, planejar
   as tasks, gerar a base de código (rotas, worker, fila, testes unitários,

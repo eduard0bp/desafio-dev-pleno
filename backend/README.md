@@ -85,6 +85,12 @@ arquivo apague dados que outro arquivo, rodando em paralelo, ainda estava
 usando — o efeito colateral é que `npm run test:integration` roda mais
 devagar que se fosse paralelo, o que é intencional.
 
+Os testes enfileiram jobs reais na fila real (`review-processing`) para
+exercitar o worker de verdade, mas `test/integration/setup.ts` aponta o
+`REDIS_URL` da suíte para o banco lógico `/1` em vez do `/0` padrão —
+assim a suíte não compete por jobs com o worker do `docker compose`
+quando a stack completa está no ar ao mesmo tempo.
+
 Os testes unitários ficam ao lado do arquivo que testam
 (`src/**/*.test.ts`, ex. `src/lib/health.test.ts`), e são excluídos do
 build de produção via `tsconfig.json` (`exclude: ["src/**/*.test.ts"]`).
