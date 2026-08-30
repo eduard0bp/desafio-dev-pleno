@@ -15,16 +15,16 @@ describe('useNegativeReviewsQuery', () => {
     vi.restoreAllMocks();
   });
 
-  it('fetches only unread negative reviews, capped at 5 per page', async () => {
+  it('fetches only unread negative reviews, capped at 100 per page', async () => {
     const spy = vi
       .spyOn(api, 'listReviews')
       .mockResolvedValue(
-        getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 5, total: 0, totalPages: 1 } }),
+        getMockCoreListReviewsResult({ data: [], pagination: { page: 1, pageSize: 100, total: 0, totalPages: 1 } }),
       );
 
     const { result } = renderHook(() => useNegativeReviewsQuery(), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(spy).toHaveBeenCalledWith({ page: 1, pageSize: 5, sentiment: 'negative', isRead: false });
+    expect(spy).toHaveBeenCalledWith({ page: 1, pageSize: 100, sentiment: 'negative', isRead: false });
   });
 });

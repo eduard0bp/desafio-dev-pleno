@@ -48,7 +48,7 @@ export function NotificationBell() {
               Nenhuma avaliação negativa por enquanto.
             </Text>
           ) : (
-            <Stack gap={0}>
+            <Stack gap={0} className={classes.list}>
               {reviews.map((review) => (
                 <UnstyledButton key={review.id} className={classes.item} onClick={() => handleSelect(review.id)}>
                   <Stack gap={2} px="sm" py={6}>
