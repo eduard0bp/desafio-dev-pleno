@@ -60,7 +60,6 @@ describe('async pipeline (real worker + real queue + real fake-analysis call)', 
       },
     });
 
-    // Bypass enqueueReviewJob's default attempts so the test doesn't wait through 5 real backoffs.
     await reviewQueue.add(
       'process-review',
       { reviewId: review.id, mockScenario: 'server-error' },
